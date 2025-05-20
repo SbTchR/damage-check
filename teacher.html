@@ -1,0 +1,22 @@
+<!-- teacher.html  (tableau de bord enseignant) -->
+<!DOCTYPE html><html lang="fr"><head>
+<meta charset="UTF-8"><title>Tableau de bord dégâts</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
+<style>body{margin:20px} table{width:100%}</style>
+</head><body>
+
+<h2>Tableau de bord</h2>
+<label>Mot de passe : <input type="password" id="pwd"></label>
+<button id="login">Connexion</button>
+
+<div id="dash" class="hidden">
+  <select id="pcSelect"></select>
+  <label><input type="checkbox" id="onlyDamages"> N’afficher que les dégâts</label>
+  <table>
+    <thead><tr><th>Date</th><th>Élève</th><th>Section</th><th>Description</th><th>Réglé ?</th><th></th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script type="module" src="teacher.js"></script>
+</body></html>

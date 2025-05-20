@@ -1,0 +1,54 @@
+<!-- student.html  (ouvre via Safari sur les Macs) -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Vérification ordinateur</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
+<style>body{margin:20px} .hidden{display:none}</style>
+</head>
+<body>
+
+<h2>Ordinateur <span id="pcId"></span></h2>
+<p>Utilisateur : <strong id="userId"></strong></p>
+
+<!-- Sections -->
+<div id="section-keyboard"  class="section">
+  <h3>Clavier</h3>
+  <ul id="list-keyboard"></ul>
+  <button data-sec="keyboard" data-nothing>Rien à signaler</button>
+  <button data-sec="keyboard" data-new>Signaler un nouveau dégât</button>
+</div>
+
+<div id="section-mouse"  class="section hidden">
+  <h3>Souris / Trackpad</h3>
+  <ul id="list-mouse"></ul>
+  <button data-sec="mouse" data-nothing>Rien à signaler</button>
+  <button data-sec="mouse" data-new>Signaler un nouveau dégât</button>
+</div>
+
+<div id="section-screen"  class="section hidden">
+  <h3>Écran</h3>
+  <ul id="list-screen"></ul>
+  <button data-sec="screen" data-nothing>Rien à signaler</button>
+  <button data-sec="screen" data-new>Signaler un nouveau dégât</button>
+</div>
+
+<div id="section-other"  class="section hidden">
+  <h3>Autres</h3>
+  <ul id="list-other"></ul>
+  <button data-sec="other" data-nothing>Rien à signaler</button>
+  <button data-sec="other" data-new>Signaler un nouveau dégât</button>
+</div>
+
+<!-- Dialogue nouveau dégât -->
+<div id="modal" class="hidden">
+  <h4 id="modal-title"></h4>
+  <input type="text" id="damageDesc" placeholder="Décris le dégât…" />
+  <button id="cancel">Annuler</button>
+  <button id="save">Enregistrer</button>
+</div>
+
+<script type="module" src="student.js"></script>
+</body>
+</html>
