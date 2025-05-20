@@ -12,6 +12,11 @@ const userId = params.get("user");
 document.getElementById("pcId").textContent   = pcId;
 document.getElementById("userId").textContent = userId;
 
+/* ------ Sélecteurs pour la boîte modale ------ */
+const modal     = document.getElementById("modal");
+const saveBtn   = document.getElementById("save");
+const cancelBtn = document.getElementById("cancel");
+
 /* ------ Récupérer dégâts non résolus ------ */
 const pcRef = doc(db, "computers", pcId);
 const pcSnap = await getDoc(pcRef);
@@ -61,16 +66,15 @@ function openModal(sec){
   document.getElementById("damageDesc").value = "";
   modal.classList.remove("hidden");
 
-  save.onclick = async ()=>{
+  saveBtn.onclick = async () => {
       const txt = document.getElementById("damageDesc").value.trim();
       if(!txt) return;
       pendingReports.push({ section:sec, desc:txt });
-      // ajoute sur l'écran pour l'élève suivant
       await updateDoc(pcRef, { [sec]: arrayUnion(txt) });
       closeModal();
       nextSection();
   };
-  cancel.onclick = closeModal;
+  cancelBtn.onclick = closeModal;
 }
 function closeModal(){ modal.classList.add("hidden"); }
 
