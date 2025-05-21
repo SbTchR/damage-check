@@ -2,7 +2,7 @@
 import { db } from "./firebase-config.js";
 import {
   collection, query, where, onSnapshot,
-  getDocs, updateDoc, doc
+  getDocs, updateDoc, doc, arrayRemove, arrayUnion, getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Lance le tableau de bord dès le chargement
@@ -36,12 +36,19 @@ function render(){
           if(onlyDamages.checked && item.desc==="rien") return;
           const tr=document.createElement("tr");
           tr.innerHTML = `
-            <td>${d.when?.toDate().toLocaleString()}</td>
-            <td>${d.user}</td>
-            <td>${label(item.section)}</td>
-            <td>${item.desc}</td>
-            <td>${d.resolved?"✅":"❌"}</td>
-            <td><button data-id="${docSnap.id}" ${d.resolved?"disabled":""}>Réglé</button></td>`;
+  <td>${d.when?.toDate().toLocaleString()}</td>
+  <td>${d.user}</td>
+  <td>${label(item.section)}</td>
+  <td>${item.desc}</td>
+  <td>${d.resolved ? "✅" : "❌"}</td>
+  <td>
+      <button data-id="${docSnap.id}"
+              data-sec="${item.section}"
+              data-desc="${encodeURIComponent(item.desc)}"
+              data-res="${d.resolved}">
+          ${d.resolved ? "Marquer non réglé" : "Marquer réglé"}
+      </button>
+  </td>`;
           tbody.appendChild(tr);
         });
       });
@@ -50,8 +57,30 @@ function render(){
 
 tbody.addEventListener("click", async e=>{
   if(e.target.tagName!=="BUTTON") return;
-  const id = e.target.dataset.id;
-  await updateDoc(doc(db,"reports",id),{resolved:true});
+
+  const id      = e.target.dataset.id;
+  const section = e.target.dataset.sec;
+  const desc    = decodeURIComponent(e.target.dataset.desc);
+  const resNow  = e.target.dataset.res === "true";
+  const pc      = pcSelect.value;
+
+  const reportRef = doc(db,"reports",id);
+
+  // toggle resolved status
+  await updateDoc(reportRef,{resolved:!resNow});
+
+  const pcRef = doc(db,"computers", pc);
+  if (!resNow){
+      // we are marking as resolved → retirer du tableau
+      await updateDoc(pcRef, {
+        [section]: arrayRemove(desc)
+      });
+  }else{
+      // on remet en non-réglé → réinsérer si absent
+      await updateDoc(pcRef, {
+        [section]: arrayUnion(desc)
+      });
+  }
 });
 
 function label(sec){
