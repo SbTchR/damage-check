@@ -5,15 +5,6 @@ import {
   getDocs, updateDoc, doc, arrayRemove, arrayUnion, getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-function setTableHeader(cols) {
-  // cols: tableau de textes de colonne, ex: ["PC", "Section", "Description"]
-  const thead = document.querySelector("thead");
-  thead.innerHTML =
-    "<tr>" +
-    cols.map(txt => `<th>${txt}</th>`).join("") +
-    "</tr>";
-}
-
 let currentPC   = "01";
 let unresolved  = {keyboard:[],mouse:[],screen:[],other:[]};
 let reportCache = []; // array of {when,user,items}
@@ -32,10 +23,6 @@ async function initDashboard(){
     opt.value=snapshot.id; opt.textContent=snapshot.id;
     pcSelect.appendChild(opt);
   });
-  const allOpt = document.createElement("option");
-  allOpt.value = "ALL";
-  allOpt.textContent = "Vue d'ensemble";
-  pcSelect.appendChild(allOpt);
 
   if (!pcSelect.value && pcSelect.options.length){
     pcSelect.value = pcSelect.options[0].value;
@@ -50,9 +37,6 @@ async function initDashboard(){
 function render(){
   const pc = pcSelect.value || "01";
 
-  document.getElementById("onlyDamages").closest("label").style.display = (pc==="ALL" ? "none" : "");
-  document.getElementById("onlyUnres").closest("label").style.display    = (pc==="ALL" ? "none" : "");
-
   // quick guard to avoid extra work when only filter checkboxes toggled
   if (pc === currentPC && event?.type!=="change") {
     drawTable();
@@ -63,18 +47,6 @@ function render(){
   // stop previous listeners
   if (unsubReports) { unsubReports(); unsubReports=null; }
   if (unsubUnres)   { unsubUnres();   unsubUnres=null; }
-
-  if (pc === "ALL"){
-      // écoute globale des computers
-      unsubUnres = onSnapshot(collection(db,"computers"), snap=>{
-         unresolvedMap = {}; // temp map pcId -> arrays
-         snap.forEach(docSnap=>{
-           unresolvedMap[docSnap.id]=docSnap.data();
-         });
-         drawOverview(unresolvedMap);
-      });
-      return;
-  }
 
   // 1) listen to unresolved list
   unsubUnres = onSnapshot(doc(db,"computers",pc),(snap)=>{
@@ -97,7 +69,6 @@ function render(){
 }
 
 function drawTable() {
-  setTableHeader(["Date", "Élève", "Section", "Description", "Statut", "Action"]);
   tbody.innerHTML = "";
   const shown = new Set();                 // pour éviter les doublons
 
@@ -136,25 +107,7 @@ function drawTable() {
   });
 }
 
-function drawOverview(unresMap){
-  setTableHeader(["PC", "Section", "Description"]);
-  tbody.innerHTML = "";
-  Object.entries(unresMap).forEach(([pcId, data])=>{
-    ["keyboard","mouse","screen","other"].forEach(sec=>{
-      data[sec].forEach(desc=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${pcId}</td>
-          <td>${label(sec)}</td>
-          <td>${desc}</td>`;
-        tbody.appendChild(tr);
-      });
-    });
-  });
-}
-
 tbody.addEventListener("click", async ev=>{
-  if (currentPC==="ALL") return;
   if(ev.target.tagName !== "BUTTON") return;
   const section = ev.target.dataset.sec;
   const desc    = decodeURIComponent(ev.target.dataset.desc);
