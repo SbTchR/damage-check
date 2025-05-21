@@ -5,7 +5,11 @@
 <meta charset="UTF-8" />
 <title>Vérification ordinateur</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
-<style>body{margin:20px} .hidden{display:none}</style>
+<style>
+body{margin:20px}
+.hidden{display:none}
+#section-welcome { text-align:center; margin-bottom:2em; }
+</style>
 <script>
   // Empêche la fermeture de la fenêtre tant que le formulaire n'a pas été envoyé
   let isSubmitted = false;
@@ -28,11 +32,29 @@
 </head>
 <body>
 
+<div id="section-welcome" class="section">
+  <h2>Bienvenue&nbsp;!</h2>
+  <p>
+    <b>Avant d’utiliser cet ordinateur, tu dois obligatoirement remplir ce questionnaire.</b><br>
+    <span style="color:#0077ff">Tu ne pourras pas quitter cette page tant que le formulaire n’aura pas été rempli.</span><br>
+    <br>
+    <b>Consigne :</b> <br>
+    <ul>
+      <li>Signale honnêtement tout problème constaté (clavier, souris, écran, autres).</li>
+      <li>Si tout fonctionne, clique simplement sur “Rien à signaler” pour chaque section.</li>
+      <li>À la fin, fais valider par le professeur si tu déclares un nouveau dégât.</li>
+    </ul>
+    <br>
+    <i>Merci de ta collaboration pour le respect du matériel !</i>
+  </p>
+  <button id="welcomeStart" style="font-size:1.2em;padding:0.7em 2em;background:linear-gradient(90deg,#0077ff,#00e0ff);color:#fff;border:none;border-radius:1em;cursor:pointer;">Commencer</button>
+</div>
+
 <h2>Ordinateur <span id="pcId"></span></h2>
 <p>Utilisateur : <strong id="userId"></strong></p>
 
 <!-- Sections -->
-<div id="section-keyboard"  class="section">
+<div id="section-keyboard"  class="section hidden">
   <h3>Clavier</h3>
   <ul id="list-keyboard"></ul>
   <button data-sec="keyboard" data-nothing>Rien à signaler</button>

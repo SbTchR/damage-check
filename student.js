@@ -1,12 +1,22 @@
-// Empêche la fermeture de la fenêtre tant que le formulaire n'a pas été envoyé
+// Empêche la fermeture de la fenêtre tant que le formulaire n'a pas été envoyé, actif dès la première interaction
 let isSubmitted = false;
-window.addEventListener("beforeunload", function(e) {
+let userHasInteracted = false;
+function activateBeforeUnload() {
+  if (!userHasInteracted) {
+    userHasInteracted = true;
+    window.addEventListener("beforeunload", blockUnload);
+  }
+}
+function blockUnload(e) {
   if (!isSubmitted) {
     e.preventDefault();
-    e.returnValue = "Tu dois remplir le questionnaire avant de quitter !";
-    return "Tu dois remplir le questionnaire avant de quitter !";
+    e.returnValue = "";
+    return "";
   }
-});
+}
+window.addEventListener("mousedown", activateBeforeUnload, { once: true });
+window.addEventListener("keydown", activateBeforeUnload, { once: true });
+window.addEventListener("touchstart", activateBeforeUnload, { once: true });
 
 // Change le titre si l'élève essaie d'aller ailleurs
 window.onblur = function() {
@@ -61,8 +71,10 @@ const data = (await getDoc(pcRef)).data();
 /* ------ Navigation de section ------ */
 let current = 0;
 const sections = Array.from(document.querySelectorAll(".section"));
+// possibilité de faire apparaître une consigne sur la première section si tu le veux dans le HTML
 function show(i){
   sections.forEach((s,idx)=>s.classList.toggle("hidden",idx!==i));
+  updateProgressBar();
 }
 show(current);
 
@@ -154,3 +166,31 @@ function previousSection(){
 function label(sec){
   return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",other:"Autres"}[sec];
 }
+
+// -------- Barre de progression --------
+const progressBar = document.createElement("div");
+progressBar.style.position = "fixed";
+progressBar.style.top = "0";
+progressBar.style.left = "0";
+progressBar.style.height = "8px";
+progressBar.style.width = "100%";
+progressBar.style.background = "#e0e0e0";
+progressBar.style.zIndex = "9999";
+const fillBar = document.createElement("div");
+fillBar.style.height = "100%";
+fillBar.style.width = "0%";
+fillBar.style.background = "linear-gradient(90deg, #0077ff, #00e0ff)";
+fillBar.style.transition = "width 0.3s";
+progressBar.appendChild(fillBar);
+document.body.appendChild(progressBar);
+
+function updateProgressBar() {
+  let percent = Math.round((current+1)/sections.length*100);
+  fillBar.style.width = percent + "%";
+}
+// Appelle updateProgressBar à chaque changement de section
+function show(i){
+  sections.forEach((s,idx)=>s.classList.toggle("hidden",idx!==i));
+  updateProgressBar();
+}
+updateProgressBar();
