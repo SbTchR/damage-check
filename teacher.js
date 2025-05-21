@@ -1,20 +1,12 @@
 // teacher.js
 import { db } from "./firebase-config.js";
 import {
-  collection, query, where, onSnapshot, orderBy,
+  collection, query, where, onSnapshot,
   getDocs, updateDoc, doc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const PASSWORD = "Patefacite";           // change-le si tu veux
-
-login.onclick = ()=>{
-  if (pwd.value===PASSWORD){
-    document.getElementById("dash").classList.remove("hidden");
-    initDashboard();
-  }else{
-    alert("Mot de passe incorrect");
-  }
-};
+// Lance le tableau de bord dès le chargement
+initDashboard();
 
 async function initDashboard(){
   /* Remplir la liste des PC */
@@ -24,6 +16,9 @@ async function initDashboard(){
     opt.value=snapshot.id; opt.textContent=snapshot.id;
     pcSelect.appendChild(opt);
   });
+  if (!pcSelect.value && pcSelect.options.length){
+    pcSelect.value = pcSelect.options[0].value;
+  }
   pcSelect.onchange = render;
   onlyDamages.onchange = render;
   render();
@@ -32,8 +27,7 @@ async function initDashboard(){
 function render(){
   const pc = pcSelect.value || "01";
   const q = query(collection(db,"reports"),
-          where("pcId","==",pc),
-          orderBy("when","desc"));
+          where("pcId","==",pc));
   onSnapshot(q, snap=>{
       tbody.innerHTML="";
       snap.forEach(docSnap=>{

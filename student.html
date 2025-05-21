@@ -25,6 +25,7 @@
   <ul id="list-mouse"></ul>
   <button data-sec="mouse" data-nothing>Rien à signaler</button>
   <button data-sec="mouse" data-new>Signaler un nouveau dégât</button>
+  <button data-back>Précédent</button>
 </div>
 
 <div id="section-screen"  class="section hidden">
@@ -32,6 +33,7 @@
   <ul id="list-screen"></ul>
   <button data-sec="screen" data-nothing>Rien à signaler</button>
   <button data-sec="screen" data-new>Signaler un nouveau dégât</button>
+  <button data-back>Précédent</button>
 </div>
 
 <div id="section-other"  class="section hidden">
@@ -39,6 +41,7 @@
   <ul id="list-other"></ul>
   <button data-sec="other" data-nothing>Rien à signaler</button>
   <button data-sec="other" data-new>Signaler un nouveau dégât</button>
+  <button data-back>Précédent</button>
 </div>
 
 <!-- Dialogue nouveau dégât -->
@@ -47,6 +50,15 @@
   <input type="text" id="damageDesc" placeholder="Décris le dégât…" />
   <button id="cancel">Annuler</button>
   <button id="save">Enregistrer</button>
+</div>
+
+<!-- Validation professeur -->
+<div id="pwdModal" class="hidden">
+  <h4>Nouveaux dégâts signalés</h4>
+  <ul id="newList"></ul>
+  <input type="password" id="pwdInput" placeholder="Mot de passe professeur" />
+  <button id="pwdCancel">Annuler</button>
+  <button id="pwdOk">Valider</button>
 </div>
 
 <script type="module" src="student.js"></script>
