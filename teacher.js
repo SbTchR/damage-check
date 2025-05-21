@@ -153,6 +153,7 @@ async function showGlobalView() {
         latest[pc][key] = { when, section: item.section, desc: item.desc };
       }
     });
+    document.getElementById("tabGlobal").onclick = showGlobalView;
   });
 
 // Pour chaque PC, chaque section, chaque dégât non réglé
