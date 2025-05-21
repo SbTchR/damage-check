@@ -10,6 +10,7 @@ let unresolved  = {keyboard:[],mouse:[],screen:[],other:[]};
 let reportCache = []; // array of {when,user,items}
 let unsubReports = null;
 let unsubUnres   = null;
+let onlyUnresToggle = null;
 
 // Lance le tableau de bord dès le chargement
 initDashboard();
@@ -22,22 +23,46 @@ async function initDashboard(){
     opt.value=snapshot.id; opt.textContent=snapshot.id;
     pcSelect.appendChild(opt);
   });
+  const allOpt = document.createElement("option");
+  allOpt.value = "ALL";
+  allOpt.textContent = "Vue d'ensemble";
+  pcSelect.appendChild(allOpt);
+
   if (!pcSelect.value && pcSelect.options.length){
     pcSelect.value = pcSelect.options[0].value;
   }
   pcSelect.onchange = render;
   onlyDamages.onchange = render;
+  onlyUnresToggle = document.getElementById("onlyUnres"); // peut être null au début
+  if (onlyUnresToggle) onlyUnresToggle.onchange = render;
   render();
 }
 
 function render(){
   const pc = pcSelect.value || "01";
-  if (pc === currentPC) return;
+
+  // quick guard to avoid extra work when only filter checkboxes toggled
+  if (pc === currentPC && event?.type!=="change") {
+    drawTable();
+    return;
+  }
   currentPC = pc;
 
   // stop previous listeners
-  if (unsubReports) unsubReports();
-  if (unsubUnres)   unsubUnres();
+  if (unsubReports) { unsubReports(); unsubReports=null; }
+  if (unsubUnres)   { unsubUnres();   unsubUnres=null; }
+
+  if (pc === "ALL"){
+      // écoute globale des computers
+      unsubUnres = onSnapshot(collection(db,"computers"), snap=>{
+         unresolvedMap = {}; // temp map pcId -> arrays
+         snap.forEach(docSnap=>{
+           unresolvedMap[docSnap.id]=docSnap.data();
+         });
+         drawOverview(unresolvedMap);
+      });
+      return;
+  }
 
   // 1) listen to unresolved list
   unsubUnres = onSnapshot(doc(db,"computers",pc),(snap)=>{
@@ -66,6 +91,7 @@ function drawTable(){
 
   // helper to push a row
   const pushRow = (sec, desc, whenStr, userStr, isUnres) =>{
+    if (onlyUnresToggle && onlyUnresToggle.checked && !isUnres) return;
     const key = `${sec}|${desc}`;
     if (added.has(key)) return;
     added.add(key);
@@ -105,7 +131,27 @@ function drawTable(){
   });
 }
 
+function drawOverview(unresMap){
+  tbody.innerHTML = "";
+  Object.entries(unresMap).forEach(([pcId, data])=>{
+    ["keyboard","mouse","screen","other"].forEach(sec=>{
+      data[sec].forEach(desc=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML = `
+          <td>${pcId}</td>
+          <td></td>
+          <td>${label(sec)}</td>
+          <td>${desc}</td>
+          <td>❌</td>
+          <td></td>`;
+        tbody.appendChild(tr);
+      });
+    });
+  });
+}
+
 tbody.addEventListener("click", async ev=>{
+  if (currentPC==="ALL") return;
   if(ev.target.tagName !== "BUTTON") return;
   const section = ev.target.dataset.sec;
   const desc    = decodeURIComponent(ev.target.dataset.desc);

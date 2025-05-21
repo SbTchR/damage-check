@@ -116,6 +116,9 @@ async function nextSection(){
 }
 
 async function sendReports(){
+    if (pendingReports.length === 0){
+        pendingReports.push({section:"none", desc:"rien"});
+    }
     await addDoc(collection(db,"reports"), {
       pcId, user:userId, when: serverTimestamp(), items: pendingReports, resolved:false
     });
