@@ -68,139 +68,144 @@ const data = (await getDoc(pcRef)).data();
   });
 });
 
-/* ------ Navigation de section ------ */
-
-const sections = [
-  document.getElementById('section-welcome'),
-  document.getElementById('section-keyboard'),
-  document.getElementById('section-mouse'),
-  document.getElementById('section-screen'),
-  document.getElementById('section-other')
-];
-let current = 0;
-show(current);
-
-const welcomeBtn = document.getElementById("welcomeStart");
-if (welcomeBtn) {
-  welcomeBtn.onclick = () => {
-    current = 1;
-    show(current);
-  };
-}
-
 /* ------ Gestion des boutons ------ */
 let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
 
-document.body.addEventListener("click", e=>{
-  /* avancer / reculer entre sections */
-  if (e.target.dataset.back !== undefined){
-    previousSection();
-    return;
+document.addEventListener("DOMContentLoaded", function() {
+
+  /* ------ Navigation de section ------ */
+
+  const sections = [
+    document.getElementById('section-welcome'),
+    document.getElementById('section-keyboard'),
+    document.getElementById('section-mouse'),
+    document.getElementById('section-screen'),
+    document.getElementById('section-other')
+  ];
+  let current = 0;
+
+  // -------- Barre de progression --------
+  const progressBar = document.createElement("div");
+  progressBar.style.position = "fixed";
+  progressBar.style.top = "0";
+  progressBar.style.left = "0";
+  progressBar.style.height = "8px";
+  progressBar.style.width = "100%";
+  progressBar.style.background = "#e0e0e0";
+  progressBar.style.zIndex = "9999";
+  const fillBar = document.createElement("div");
+  fillBar.style.height = "100%";
+  fillBar.style.width = "0%";
+  fillBar.style.background = "linear-gradient(90deg, #0077ff, #00e0ff)";
+  fillBar.style.transition = "width 0.3s";
+  progressBar.appendChild(fillBar);
+  document.body.appendChild(progressBar);
+
+  function updateProgressBar() {
+    let percent = Math.round((current+1)/sections.length*100);
+    fillBar.style.width = percent + "%";
   }
-  const sec = e.target.dataset.sec;
-  if (!sec) return;
+  // Appelle updateProgressBar à chaque changement de section
+  function show(i){
+    sections.forEach((s,idx)=>s.classList.toggle("hidden",idx!==i));
+    updateProgressBar();
+  }
+  show(current);
 
-  if ("nothing" in e.target.dataset){
-      nextSection();
+  const welcomeBtn = document.getElementById("welcomeStart");
+  if (welcomeBtn) {
+    welcomeBtn.onclick = () => {
+      current = 1;
+      show(current);
+    };
   }
 
-  if ("new" in e.target.dataset){
-      openModal(sec);
-  }
-});
-
-/* ------ Modale nouveau dégât ------ */
-function openModal(sec){
-  document.getElementById("modal-title").textContent =
-      `Nouveau dégât – ${label(sec)}`;
-  document.getElementById("damageDesc").value = "";
-  modal.classList.remove("hidden");
-
-  saveBtn.onclick = async () => {
-      const txt = document.getElementById("damageDesc").value.trim();
-      if(!txt) return;
-      pendingReports.push({ section:sec, desc:txt });
-      await updateDoc(pcRef, { [sec]: arrayUnion(txt) });
-      closeModal();
-      nextSection();
-  };
-  cancelBtn.onclick = closeModal;
-}
-function closeModal(){ modal.classList.add("hidden"); }
-
-/* ------ Suite des sections ou envoi final ------ */
-async function nextSection(){
-  current++;
-  if (current < sections.length){
-    show(current);
-  } else {
-      if (pendingReports.length && !(pendingReports.length===1 && pendingReports[0].section==="none")){
-          // afficher la modale prof
-          newList.innerHTML = "";
-          pendingReports.forEach(r=>{
-              const li=document.createElement("li");
-              li.textContent = `${label(r.section)} : ${r.desc}`;
-              newList.appendChild(li);
-          });
-          pwdModal.classList.remove("hidden");
-          pwdOk.onclick = async ()=>{
-              if (pwdInput.value!==PROF_PWD){ alert("Mot de passe incorrect"); return; }
-              await sendReports();
-          };
-          pwdCancel.onclick = ()=>{ pwdModal.classList.add("hidden"); };
-      } else {
-          await sendReports();
-      }
-  }
-}
-
-async function sendReports(){
-    if (pendingReports.length === 0){
-        pendingReports.push({section:"none", desc:"rien"});
+  document.body.addEventListener("click", e=>{
+    /* avancer / reculer entre sections */
+    if (e.target.dataset.back !== undefined){
+      previousSection();
+      return;
     }
-    await addDoc(collection(db,"reports"), {
-      pcId, user:userId, when: serverTimestamp(), items: pendingReports, resolved:false
-    });
-    isSubmitted = true;
-    alert("Merci ! Tu peux fermer cette fenêtre.");
-    window.close();
-}
+    const sec = e.target.dataset.sec;
+    if (!sec) return;
 
-function previousSection(){
-  if (current>0){
-    current--;
-    show(current);
+    if ("nothing" in e.target.dataset){
+        nextSection();
+    }
+
+    if ("new" in e.target.dataset){
+        openModal(sec);
+    }
+  });
+
+  /* ------ Modale nouveau dégât ------ */
+  function openModal(sec){
+    document.getElementById("modal-title").textContent =
+        `Nouveau dégât – ${label(sec)}`;
+    document.getElementById("damageDesc").value = "";
+    modal.classList.remove("hidden");
+
+    saveBtn.onclick = async () => {
+        const txt = document.getElementById("damageDesc").value.trim();
+        if(!txt) return;
+        pendingReports.push({ section:sec, desc:txt });
+        await updateDoc(pcRef, { [sec]: arrayUnion(txt) });
+        closeModal();
+        nextSection();
+    };
+    cancelBtn.onclick = closeModal;
   }
-}
+  function closeModal(){ modal.classList.add("hidden"); }
 
-function label(sec){
-  return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",other:"Autres"}[sec];
-}
+  /* ------ Suite des sections ou envoi final ------ */
+  async function nextSection(){
+    current++;
+    if (current < sections.length){
+      show(current);
+    } else {
+        if (pendingReports.length && !(pendingReports.length===1 && pendingReports[0].section==="none")){
+            // afficher la modale prof
+            newList.innerHTML = "";
+            pendingReports.forEach(r=>{
+                const li=document.createElement("li");
+                li.textContent = `${label(r.section)} : ${r.desc}`;
+                newList.appendChild(li);
+            });
+            pwdModal.classList.remove("hidden");
+            pwdOk.onclick = async ()=>{
+                if (pwdInput.value!==PROF_PWD){ alert("Mot de passe incorrect"); return; }
+                await sendReports();
+            };
+            pwdCancel.onclick = ()=>{ pwdModal.classList.add("hidden"); };
+        } else {
+            await sendReports();
+        }
+    }
+  }
 
-// -------- Barre de progression --------
-const progressBar = document.createElement("div");
-progressBar.style.position = "fixed";
-progressBar.style.top = "0";
-progressBar.style.left = "0";
-progressBar.style.height = "8px";
-progressBar.style.width = "100%";
-progressBar.style.background = "#e0e0e0";
-progressBar.style.zIndex = "9999";
-const fillBar = document.createElement("div");
-fillBar.style.height = "100%";
-fillBar.style.width = "0%";
-fillBar.style.background = "linear-gradient(90deg, #0077ff, #00e0ff)";
-fillBar.style.transition = "width 0.3s";
-progressBar.appendChild(fillBar);
-document.body.appendChild(progressBar);
+  async function sendReports(){
+      if (pendingReports.length === 0){
+          pendingReports.push({section:"none", desc:"rien"});
+      }
+      await addDoc(collection(db,"reports"), {
+        pcId, user:userId, when: serverTimestamp(), items: pendingReports, resolved:false
+      });
+      isSubmitted = true;
+      alert("Merci ! Tu peux fermer cette fenêtre.");
+      window.close();
+  }
 
-function updateProgressBar() {
-  let percent = Math.round((current+1)/sections.length*100);
-  fillBar.style.width = percent + "%";
-}
-// Appelle updateProgressBar à chaque changement de section
-function show(i){
-  sections.forEach((s,idx)=>s.classList.toggle("hidden",idx!==i));
+  function previousSection(){
+    if (current>0){
+      current--;
+      show(current);
+    }
+  }
+
+  function label(sec){
+    return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",other:"Autres"}[sec];
+  }
+
   updateProgressBar();
-}
-updateProgressBar();
+
+});
