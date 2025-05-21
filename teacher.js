@@ -5,6 +5,12 @@ import {
   getDocs, updateDoc, doc, arrayRemove, arrayUnion, getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+let currentPC   = "01";
+let unresolved  = {keyboard:[],mouse:[],screen:[],other:[]};
+let reportCache = []; // array of {when,user,items}
+let unsubReports = null;
+let unsubUnres   = null;
+
 // Lance le tableau de bord dès le chargement
 initDashboard();
 
@@ -24,67 +30,92 @@ async function initDashboard(){
   render();
 }
 
-async function render(){
+function render(){
   const pc = pcSelect.value || "01";
+  if (pc === currentPC) return;
+  currentPC = pc;
 
-  // 1. Récupère la liste actuelle des dégâts NON réglés pour ce poste
-  const pcSnap = await getDoc(doc(db,"computers",pc));
-  const unresolved = pcSnap.exists() ? pcSnap.data() : {keyboard:[],mouse:[],screen:[],other:[]};
+  // stop previous listeners
+  if (unsubReports) unsubReports();
+  if (unsubUnres)   unsubUnres();
 
-  // 2. Écoute les rapports pour ce poste
-  const q = query(collection(db,"reports"),
-          where("pcId","==",pc));
-  onSnapshot(q, snap=>{
-      tbody.innerHTML="";
-      snap.forEach(docSnap=>{
-        const d = docSnap.data();
-        d.items.forEach(item=>{
-          if(onlyDamages.checked && item.desc==="rien") return;
+  // 1) listen to unresolved list
+  unsubUnres = onSnapshot(doc(db,"computers",pc),(snap)=>{
+      if (snap.exists()){
+          unresolved = snap.data();
+      } else {
+          unresolved = {keyboard:[],mouse:[],screen:[],other:[]};
+      }
+      drawTable();
+  });
 
-          const isUnresolved = unresolved[item.section]?.includes(item.desc);
-          const tr=document.createElement("tr");
-          tr.innerHTML = `
-  <td>${d.when?.toDate().toLocaleString()}</td>
-  <td>${d.user}</td>
-  <td>${label(item.section)}</td>
-  <td>${item.desc}</td>
-  <td>${isUnresolved ? "❌" : "✅"}</td>
-  <td>
-      <button data-id="${docSnap.id}"
-              data-sec="${item.section}"
-              data-desc="${encodeURIComponent(item.desc)}"
-              data-res="${isUnresolved}">
-          ${isUnresolved ? "Marquer réglé" : "Marquer non réglé"}
-      </button>
-  </td>`;
-          tbody.appendChild(tr);
-        });
-      });
+  // 2) listen to related reports
+  const q = query(collection(db,"reports"), where("pcId","==",pc));
+  unsubReports = onSnapshot(q,(snap)=>{
+      reportCache = [];
+      snap.forEach(ds=> reportCache.push(ds.data()));
+      reportCache.sort((a,b)=> b.when?.seconds - a.when?.seconds);
+      drawTable();
   });
 }
 
-tbody.addEventListener("click", async e=>{
-  if(e.target.tagName!=="BUTTON") return;
+function drawTable(){
+  tbody.innerHTML = "";
 
-  const id      = e.target.dataset.id;
-  const section = e.target.dataset.sec;
-  const desc    = decodeURIComponent(e.target.dataset.desc);
-  const unresolvedNow  = e.target.dataset.res === "true";
-  const pc      = pcSelect.value;
+  const added = new Set();
 
-  const reportRef = doc(db,"reports",id);
+  // helper to push a row
+  const pushRow = (sec, desc, whenStr, userStr, isUnres) =>{
+    const key = `${sec}|${desc}`;
+    if (added.has(key)) return;
+    added.add(key);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${whenStr}</td>
+      <td>${userStr}</td>
+      <td>${label(sec)}</td>
+      <td>${desc}</td>
+      <td>${isUnres ? "❌" : "✅"}</td>
+      <td>
+        <button data-sec="${sec}"
+                data-desc="${encodeURIComponent(desc)}"
+                data-res="${isUnres}">
+          ${isUnres ? "Marquer réglé" : "Marquer non réglé"}
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+  };
 
-  const pcRef = doc(db,"computers", pc);
+  // A) unresolved arrays
+  ["keyboard","mouse","screen","other"].forEach(sec=>{
+    unresolved[sec].forEach(desc=>{
+      pushRow(sec, desc, "", "", true);
+    });
+  });
+
+  // B) reports cache
+  reportCache.forEach(r=>{
+    const whenStr = r.when ? new Date(r.when.seconds*1000).toLocaleString() : "";
+    const userStr = r.user ?? "";
+    r.items.forEach(item=>{
+      if(onlyDamages.checked && item.desc==="rien") return;
+      const isUnres = unresolved[item.section]?.includes(item.desc);
+      pushRow(item.section, item.desc, whenStr, userStr, isUnres);
+    });
+  });
+}
+
+tbody.addEventListener("click", async ev=>{
+  if(ev.target.tagName !== "BUTTON") return;
+  const section = ev.target.dataset.sec;
+  const desc    = decodeURIComponent(ev.target.dataset.desc);
+  const unresolvedNow = ev.target.dataset.res === "true";
+  const pcRef = doc(db,"computers", currentPC);
+
   if (unresolvedNow){
-      // marquer comme réglé → retirer du tableau
-      await updateDoc(pcRef, {
-        [section]: arrayRemove(desc)
-      });
+      await updateDoc(pcRef, {[section]: arrayRemove(desc)});
   } else {
-      // marquer comme non réglé → réinsérer
-      await updateDoc(pcRef, {
-        [section]: arrayUnion(desc)
-      });
+      await updateDoc(pcRef, {[section]: arrayUnion(desc)});
   }
 });
 
