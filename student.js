@@ -17,6 +17,14 @@ const modal     = document.getElementById("modal");
 const saveBtn   = document.getElementById("save");
 const cancelBtn = document.getElementById("cancel");
 
+/* ------ Modal mot de passe prof ------ */
+const pwdModal  = document.getElementById("pwdModal");
+const newList   = document.getElementById("newList");
+const pwdInput  = document.getElementById("pwdInput");
+const pwdOk     = document.getElementById("pwdOk");
+const pwdCancel = document.getElementById("pwdCancel");
+const PROF_PWD  = "Patefacite";
+
 /* ------ Récupérer dégâts non résolus ------ */
 const pcRef = doc(db, "computers", pcId);
 const pcSnap = await getDoc(pcRef);
@@ -45,15 +53,18 @@ show(current);
 let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
 
 document.body.addEventListener("click", e=>{
+  /* avancer / reculer entre sections */
+  if (e.target.dataset.back !== undefined){
+    previousSection();
+    return;
+  }
   const sec = e.target.dataset.sec;
   if (!sec) return;
 
-  /* Rien à signaler */
   if ("nothing" in e.target.dataset){
       nextSection();
   }
 
-  /* Nouveau dégât */
   if ("new" in e.target.dataset){
       openModal(sec);
   }
@@ -83,16 +94,39 @@ async function nextSection(){
   current++;
   if (current < sections.length){
     show(current);
-  }else{
-    // envoyer tous les rapports
-    if (pendingReports.length===0){
-        pendingReports.push({section:"none", desc:"rien"});
-    }
+  } else {
+      if (pendingReports.length && !(pendingReports.length===1 && pendingReports[0].section==="none")){
+          // afficher la modale prof
+          newList.innerHTML = "";
+          pendingReports.forEach(r=>{
+              const li=document.createElement("li");
+              li.textContent = `${label(r.section)} : ${r.desc}`;
+              newList.appendChild(li);
+          });
+          pwdModal.classList.remove("hidden");
+          pwdOk.onclick = async ()=>{
+              if (pwdInput.value!==PROF_PWD){ alert("Mot de passe incorrect"); return; }
+              await sendReports();
+          };
+          pwdCancel.onclick = ()=>{ pwdModal.classList.add("hidden"); };
+      } else {
+          await sendReports();
+      }
+  }
+}
+
+async function sendReports(){
     await addDoc(collection(db,"reports"), {
       pcId, user:userId, when: serverTimestamp(), items: pendingReports, resolved:false
     });
     alert("Merci ! Tu peux fermer cette fenêtre.");
-    window.close();   // Safari fermera si autorisé
+    window.close();
+}
+
+function previousSection(){
+  if (current>0){
+    current--;
+    show(current);
   }
 }
 
