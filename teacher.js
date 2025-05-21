@@ -155,55 +155,60 @@ async function showGlobalView() {
     });
   });
 
-// Pour chaque PC, chaque section, chaque dégât non réglé
-pcsSnap.forEach(pcSnap => {
-  const pcId = pcSnap.id;
-  const data = pcSnap.data() ?? {};
-  ["keyboard", "mouse", "screen", "other"].forEach(sec => {
-    const arr = Array.isArray(data[sec]) ? data[sec] : [];
-    arr.forEach(desc => {
-      const key = `${sec}|${desc}`;
-      const found = latest[pcId]?.[key];
-      const whenStr = found ? found.when.toLocaleString() : "";
-      console.log("DEBUG DÉGÂT GLOBAL :", pcId, sec, desc);
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${pcId}</td>
-        <td>${whenStr}</td>
-        <td>${label(sec)}</td>
-        <td>${desc}</td>
-        <td>❌</td>
-        <td>
-          <button data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(desc)}">
-            Marquer réglé
-          </button>
-        </td>`;
-      globalTbody.appendChild(tr);
+  // 1. Rassembler tous les dégâts dans un tableau
+  const rows = [];
+  pcsSnap.forEach(pcSnap => {
+    const pcId = pcSnap.id;
+    const data = pcSnap.data() ?? {};
+    ["keyboard", "mouse", "screen", "other"].forEach(sec => {
+      const arr = Array.isArray(data[sec]) ? data[sec] : [];
+      arr.forEach(desc => {
+        const key = `${sec}|${desc}`;
+        const found = latest[pcId]?.[key];
+        const when = found ? found.when : new Date(0);
+        rows.push({
+          pcId,
+          sec,
+          desc,
+          when, // objet Date
+          whenStr: found ? found.when.toLocaleString() : "",
+        });
+      });
     });
   });
-});
 
-// Gestion des clics sur la vue d'ensemble
-if (window.location.hash === "#global") {
-  document.getElementById("globalTbody").addEventListener("click", async ev => {
-    if (ev.target.tagName !== "BUTTON") return;
-    const pc = ev.target.dataset.pc;
-    const section = ev.target.dataset.sec;
-    const desc = decodeURIComponent(ev.target.dataset.desc);
-    if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
-    const pcRef = doc(db, "computers", pc);
-    await updateDoc(pcRef, { [section]: arrayRemove(desc) });
-    showGlobalView();
+  // 2. Trier les dégâts du plus récent au plus ancien
+  rows.sort((a, b) => b.when - a.when);
+
+  // 3. Afficher
+  rows.forEach(({pcId, sec, desc, whenStr}) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${pcId}</td>
+      <td>${whenStr}</td>
+      <td>${label(sec)}</td>
+      <td>${desc}</td>
+      <td>❌</td>
+      <td>
+        <button data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(desc)}">
+          Marquer réglé
+        </button>
+      </td>`;
+    globalTbody.appendChild(tr);
   });
-}
-
-function setTableHeader(cols) {
-  const thead = document.querySelector("thead");
-  thead.innerHTML =
-    "<tr>" + cols.map(txt => `<th>${txt}</th>`).join("") + "</tr>";
-}
 
 }
+
+document.getElementById("globalTbody").addEventListener("click", async ev => {
+  if (ev.target.tagName !== "BUTTON") return;
+  const pc = ev.target.dataset.pc;
+  const section = ev.target.dataset.sec;
+  const desc = decodeURIComponent(ev.target.dataset.desc);
+  if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
+  const pcRef = doc(db, "computers", pc);
+  await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+  showGlobalView();
+});
 
 // Expose la fonction globalement pour l'utiliser via des attributs HTML
 window.showGlobalView = showGlobalView;
