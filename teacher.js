@@ -124,3 +124,82 @@ tbody.addEventListener("click", async ev=>{
 function label(sec){
   return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",other:"Autres",none:"—"}[sec];
 }
+
+// ----- VUE D'ENSEMBLE -----
+async function showGlobalView() {
+  // Construction du header spécial
+  setTableHeader(["PC", "Date", "Type", "Description", "Statut", "Action"]);
+  tbody.innerHTML = "";
+
+  // Récupérer tous les PC
+  const pcsSnap = await getDocs(collection(db, "computers"));
+  // Récupérer tous les rapports récents
+  const reportsSnap = await getDocs(collection(db, "reports"));
+
+  // Indexer tous les rapports pour trouver la date la plus récente par dégât/PC
+  const latest = {}; // { pcId: { "section|desc": { when, section, desc } } }
+  reportsSnap.forEach(ds => {
+    const r = ds.data();
+    const pc = r.pcId;
+    const when = r.when ? new Date(r.when.seconds * 1000) : null;
+    if (!pc || !when) return;
+    if (!latest[pc]) latest[pc] = {};
+    r.items.forEach(item => {
+      if (item.desc === "rien") return;
+      const key = `${item.section}|${item.desc}`;
+      // Ne garde que la date la plus récente
+      if (!latest[pc][key] || when > latest[pc][key].when) {
+        latest[pc][key] = { when, section: item.section, desc: item.desc };
+      }
+    });
+  });
+
+  // Pour chaque PC, chaque section, chaque dégât non réglé
+  pcsSnap.forEach(pcSnap => {
+    const pcId = pcSnap.id;
+    const data = pcSnap.data();
+    ["keyboard", "mouse", "screen", "other"].forEach(sec => {
+      (data[sec] || []).forEach(desc => {
+        const key = `${sec}|${desc}`;
+        // Cherche la date la plus récente du signalement pour ce dégât
+        const found = latest[pcId]?.[key];
+        const whenStr = found && found.when
+          ? found.when.toLocaleString()
+          : "";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${pcId}</td>
+          <td>${whenStr}</td>
+          <td>${label(sec)}</td>
+          <td>${desc}</td>
+          <td>❌</td>
+          <td>
+            <button data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(desc)}">
+              Marquer réglé
+            </button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    });
+  });
+}
+
+// Gestion des clics sur la vue d'ensemble
+if (window.location.hash === "#global") {
+  tbody.addEventListener("click", async ev => {
+    if (ev.target.tagName !== "BUTTON") return;
+    const pc = ev.target.dataset.pc;
+    const section = ev.target.dataset.sec;
+    const desc = decodeURIComponent(ev.target.dataset.desc);
+    if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
+    const pcRef = doc(db, "computers", pc);
+    await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+    showGlobalView();
+  });
+}
+
+function setTableHeader(cols) {
+  const thead = document.querySelector("thead");
+  thead.innerHTML =
+    "<tr>" + cols.map(txt => `<th>${txt}</th>`).join("") + "</tr>";
+}
