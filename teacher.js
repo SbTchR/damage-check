@@ -36,16 +36,22 @@ async function render(){
           where("pcId","==",pc));
   onSnapshot(q, snap=>{
       tbody.innerHTML="";
+      const shown = new Set();   // garde trace des "section|desc" déjà affichés
+
+      // 1. lignes issues des rapports
       snap.forEach(docSnap=>{
         const d = docSnap.data();
         d.items.forEach(item=>{
           if(onlyDamages.checked && item.desc==="rien") return;
 
+          const key = `${item.section}|${item.desc}`;
           const isUnresolved = unresolved[item.section]?.includes(item.desc);
+          shown.add(key);
+
           const tr=document.createElement("tr");
           tr.innerHTML = `
-  <td>${d.when?.toDate().toLocaleString()}</td>
-  <td>${d.user}</td>
+  <td>${d.when?.toDate().toLocaleString() ?? ""}</td>
+  <td>${d.user ?? ""}</td>
   <td>${label(item.section)}</td>
   <td>${item.desc}</td>
   <td>${isUnresolved ? "❌" : "✅"}</td>
@@ -55,6 +61,30 @@ async function render(){
               data-desc="${encodeURIComponent(item.desc)}"
               data-res="${isUnresolved}">
           ${isUnresolved ? "Marquer réglé" : "Marquer non réglé"}
+      </button>
+  </td>`;
+          tbody.appendChild(tr);
+        });
+      });
+
+      // 2. lignes restantes non encore montrées (toujours non réglées)
+      ["keyboard","mouse","screen","other"].forEach(sec=>{
+        unresolved[sec].forEach(desc=>{
+          const key = `${sec}|${desc}`;
+          if (shown.has(key)) return;  // déjà ajouté via un rapport
+          const tr=document.createElement("tr");
+          tr.innerHTML = `
+  <td></td>
+  <td></td>
+  <td>${label(sec)}</td>
+  <td>${desc}</td>
+  <td>❌</td>
+  <td>
+      <button data-id=""
+              data-sec="${sec}"
+              data-desc="${encodeURIComponent(desc)}"
+              data-res="true">
+          Marquer réglé
       </button>
   </td>`;
           tbody.appendChild(tr);
@@ -72,7 +102,10 @@ tbody.addEventListener("click", async e=>{
   const unresolvedNow  = e.target.dataset.res === "true";
   const pc      = pcSelect.value;
 
-  const reportRef = doc(db,"reports",id);
+  let reportRef = null;
+  if (id){
+     reportRef = doc(db,"reports",id);
+  }
 
   const pcRef = doc(db,"computers", pc);
   if (unresolvedNow){
