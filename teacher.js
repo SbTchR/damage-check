@@ -84,49 +84,41 @@ function render(){
   });
 }
 
-function drawTable(){
+function drawTable() {
   tbody.innerHTML = "";
+  const shown = new Set();                 // pour éviter les doublons
 
-  const added = new Set();
-
-  // helper to push a row
-  const pushRow = (sec, desc, whenStr, userStr, isUnres) =>{
-    if (onlyUnresToggle && onlyUnresToggle.checked && !isUnres) return;
-    const key = `${sec}|${desc}`;
-    if (added.has(key)) return;
-    added.add(key);
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${whenStr}</td>
-      <td>${userStr}</td>
-      <td>${label(sec)}</td>
-      <td>${desc}</td>
-      <td>${isUnres ? "❌" : "✅"}</td>
-      <td>
-        <button data-sec="${sec}"
-                data-desc="${encodeURIComponent(desc)}"
-                data-res="${isUnres}">
-          ${isUnres ? "Marquer réglé" : "Marquer non réglé"}
-        </button>
-      </td>`;
-    tbody.appendChild(tr);
-  };
-
-  // A) unresolved arrays
-  ["keyboard","mouse","screen","other"].forEach(sec=>{
-    unresolved[sec].forEach(desc=>{
-      pushRow(sec, desc, "", "", true);
-    });
-  });
-
-  // B) reports cache
-  reportCache.forEach(r=>{
-    const whenStr = r.when ? new Date(r.when.seconds*1000).toLocaleString() : "";
+  reportCache.forEach(r => {               // ← déjà trié du plus récent au plus ancien
+    const whenStr = r.when
+        ? new Date(r.when.seconds * 1000).toLocaleString()
+        : "";
     const userStr = r.user ?? "";
-    r.items.forEach(item=>{
-      if(onlyDamages.checked && item.desc==="rien") return;
+
+    r.items.forEach(item => {
+      if (onlyDamages.checked && item.desc === "rien") return;
+
+      const key = `${item.section}|${item.desc}`;
+      if (shown.has(key)) return;          // un seul affichage par dégât
+      shown.add(key);
+
       const isUnres = unresolved[item.section]?.includes(item.desc);
-      pushRow(item.section, item.desc, whenStr, userStr, isUnres);
+      if (onlyUnresToggle?.checked && !isUnres) return;   // filtre « non réglés »
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${whenStr}</td>
+        <td>${userStr}</td>
+        <td>${label(item.section)}</td>
+        <td>${item.desc}</td>
+        <td>${isUnres ? "❌" : "✅"}</td>
+        <td>
+          <button data-sec="${item.section}"
+                  data-desc="${encodeURIComponent(item.desc)}"
+                  data-res="${isUnres}">
+            ${isUnres ? "Marquer réglé" : "Marquer non réglé"}
+          </button>
+        </td>`;
+      tbody.appendChild(tr);
     });
   });
 }
