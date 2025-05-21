@@ -6,6 +6,25 @@
 <title>Vérification ordinateur</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
 <style>body{margin:20px} .hidden{display:none}</style>
+<script>
+  // Empêche la fermeture de la fenêtre tant que le formulaire n'a pas été envoyé
+  let isSubmitted = false;
+  window.addEventListener("beforeunload", function(e) {
+    if (!isSubmitted) {
+      e.preventDefault();
+      e.returnValue = "Tu dois remplir le questionnaire avant de quitter !";
+      return "Tu dois remplir le questionnaire avant de quitter !";
+    }
+  });
+
+  // Change le titre si l'élève essaie d'aller ailleurs
+  window.onblur = function() {
+    document.title = "⚠️ Reviens sur le formulaire !";
+  };
+  window.onfocus = function() {
+    document.title = "Questionnaire de dégâts";
+  };
+  </script>
 </head>
 <body>
 

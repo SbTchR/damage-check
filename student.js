@@ -1,3 +1,20 @@
+// Empêche la fermeture de la fenêtre tant que le formulaire n'a pas été envoyé
+let isSubmitted = false;
+window.addEventListener("beforeunload", function(e) {
+  if (!isSubmitted) {
+    e.preventDefault();
+    e.returnValue = "Tu dois remplir le questionnaire avant de quitter !";
+    return "Tu dois remplir le questionnaire avant de quitter !";
+  }
+});
+
+// Change le titre si l'élève essaie d'aller ailleurs
+window.onblur = function() {
+  document.title = "⚠️ Reviens sur le formulaire !";
+};
+window.onfocus = function() {
+  document.title = "Questionnaire de dégâts";
+};
 // student.js
 import { db } from "./firebase-config.js";
 import {
@@ -122,6 +139,7 @@ async function sendReports(){
     await addDoc(collection(db,"reports"), {
       pcId, user:userId, when: serverTimestamp(), items: pendingReports, resolved:false
     });
+    isSubmitted = true;
     alert("Merci ! Tu peux fermer cette fenêtre.");
     window.close();
 }
