@@ -128,10 +128,10 @@ function label(sec){
 // ----- VUE D'ENSEMBLE -----
 async function showGlobalView() {
   const globalTbody = document.getElementById("globalTbody");
-  // Construction du header spécial
-  setTableHeader(["PC", "Date", "Type", "Description", "Statut", "Action"]);
+  const globalThead = document.querySelector("#globalView thead");
   globalTbody.innerHTML = "";
-
+  globalThead.innerHTML =
+    "<tr><th>PC</th><th>Date</th><th>Type</th><th>Description</th><th>Statut</th><th>Action</th></tr>";
   // Récupérer tous les PC
   const pcsSnap = await getDocs(collection(db, "computers"));
   // Récupérer tous les rapports récents
@@ -156,38 +156,36 @@ async function showGlobalView() {
   });
 
   // Pour chaque PC, chaque section, chaque dégât non réglé
-  pcsSnap.forEach(pcSnap => {
-    const pcId = pcSnap.id;
-    const data = pcSnap.data();
-    ["keyboard", "mouse", "screen", "other"].forEach(sec => {
-      (data[sec] || []).forEach(desc => {
-        const key = `${sec}|${desc}`;
-        // Cherche la date la plus récente du signalement pour ce dégât
-        const found = latest[pcId]?.[key];
-        const whenStr = found && found.when
-          ? found.when.toLocaleString()
-          : "";
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${pcId}</td>
-          <td>${whenStr}</td>
-          <td>${label(sec)}</td>
-          <td>${desc}</td>
-          <td>❌</td>
-          <td>
-            <button data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(desc)}">
-              Marquer réglé
-            </button>
-          </td>`;
-        globalTbody.appendChild(tr);
-      });
+// Pour chaque PC, chaque section, chaque dégât non réglé
+pcsSnap.forEach(pcSnap => {
+  const pcId = pcSnap.id;
+  const data = pcSnap.data() ?? {};
+  ["keyboard", "mouse", "screen", "other"].forEach(sec => {
+    const arr = Array.isArray(data[sec]) ? data[sec] : [];
+    arr.forEach(desc => {
+      const key = `${sec}|${desc}`;
+      const found = latest[pcId]?.[key];
+      const whenStr = found ? found.when.toLocaleString() : "";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${pcId}</td>
+        <td>${whenStr}</td>
+        <td>${label(sec)}</td>
+        <td>${desc}</td>
+        <td>❌</td>
+        <td>
+          <button data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(desc)}">
+            Marquer réglé
+          </button>
+        </td>`;
+      globalTbody.appendChild(tr);
     });
   });
-}
+});
 
 // Gestion des clics sur la vue d'ensemble
 if (window.location.hash === "#global") {
-  tbody.addEventListener("click", async ev => {
+  document.getElementById("globalTbody").addEventListener("click", async ev => {
     if (ev.target.tagName !== "BUTTON") return;
     const pc = ev.target.dataset.pc;
     const section = ev.target.dataset.sec;
@@ -203,4 +201,5 @@ function setTableHeader(cols) {
   const thead = document.querySelector("thead");
   thead.innerHTML =
     "<tr>" + cols.map(txt => `<th>${txt}</th>`).join("") + "</tr>";
+}
 }
