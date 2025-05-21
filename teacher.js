@@ -155,7 +155,6 @@ async function showGlobalView() {
     });
   });
 
-  // Pour chaque PC, chaque section, chaque dégât non réglé
 // Pour chaque PC, chaque section, chaque dégât non réglé
 pcsSnap.forEach(pcSnap => {
   const pcId = pcSnap.id;
@@ -166,6 +165,7 @@ pcsSnap.forEach(pcSnap => {
       const key = `${sec}|${desc}`;
       const found = latest[pcId]?.[key];
       const whenStr = found ? found.when.toLocaleString() : "";
+      console.log("DEBUG DÉGÂT GLOBAL :", pcId, sec, desc);
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${pcId}</td>
