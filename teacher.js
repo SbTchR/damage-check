@@ -5,6 +5,15 @@ import {
   getDocs, updateDoc, doc, arrayRemove, arrayUnion, getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+function setTableHeader(cols) {
+  // cols: tableau de textes de colonne, ex: ["PC", "Section", "Description"]
+  const thead = document.querySelector("thead");
+  thead.innerHTML =
+    "<tr>" +
+    cols.map(txt => `<th>${txt}</th>`).join("") +
+    "</tr>";
+}
+
 let currentPC   = "01";
 let unresolved  = {keyboard:[],mouse:[],screen:[],other:[]};
 let reportCache = []; // array of {when,user,items}
@@ -40,6 +49,9 @@ async function initDashboard(){
 
 function render(){
   const pc = pcSelect.value || "01";
+
+  document.getElementById("onlyDamages").closest("label").style.display = (pc==="ALL" ? "none" : "");
+  document.getElementById("onlyUnres").closest("label").style.display    = (pc==="ALL" ? "none" : "");
 
   // quick guard to avoid extra work when only filter checkboxes toggled
   if (pc === currentPC && event?.type!=="change") {
@@ -85,6 +97,7 @@ function render(){
 }
 
 function drawTable() {
+  setTableHeader(["Date", "Élève", "Section", "Description", "Statut", "Action"]);
   tbody.innerHTML = "";
   const shown = new Set();                 // pour éviter les doublons
 
@@ -124,18 +137,16 @@ function drawTable() {
 }
 
 function drawOverview(unresMap){
+  setTableHeader(["PC", "Section", "Description"]);
   tbody.innerHTML = "";
   Object.entries(unresMap).forEach(([pcId, data])=>{
     ["keyboard","mouse","screen","other"].forEach(sec=>{
       data[sec].forEach(desc=>{
-        const tr=document.createElement("tr");
+        const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${pcId}</td>
-          <td></td>
           <td>${label(sec)}</td>
-          <td>${desc}</td>
-          <td>❌</td>
-          <td></td>`;
+          <td>${desc}</td>`;
         tbody.appendChild(tr);
       });
     });
