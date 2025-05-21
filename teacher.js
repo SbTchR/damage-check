@@ -41,10 +41,6 @@ async function initDashboard(){
 function render(){
   const pc = pcSelect.value || "01";
 
-  // Show/hide filter controls based on mode
-  document.getElementById("onlyDamages").closest("label").style.display = (pc==="ALL" ? "none" : "");
-  document.getElementById("onlyUnres").closest("label").style.display    = (pc==="ALL" ? "none" : "");
-
   // quick guard to avoid extra work when only filter checkboxes toggled
   if (pc === currentPC && event?.type!=="change") {
     drawTable();
@@ -132,11 +128,14 @@ function drawOverview(unresMap){
   Object.entries(unresMap).forEach(([pcId, data])=>{
     ["keyboard","mouse","screen","other"].forEach(sec=>{
       data[sec].forEach(desc=>{
-        const tr = document.createElement("tr");
+        const tr=document.createElement("tr");
         tr.innerHTML = `
           <td>${pcId}</td>
+          <td></td>
           <td>${label(sec)}</td>
-          <td>${desc}</td>`;
+          <td>${desc}</td>
+          <td>❌</td>
+          <td></td>`;
         tbody.appendChild(tr);
       });
     });
