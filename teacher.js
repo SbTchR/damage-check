@@ -203,5 +203,7 @@ function setTableHeader(cols) {
     "<tr>" + cols.map(txt => `<th>${txt}</th>`).join("") + "</tr>";
 }
 
-document.getElementById("tabGlobal").onclick = showGlobalView;
 }
+
+// Expose la fonction globalement pour l'utiliser via des attributs HTML
+window.showGlobalView = showGlobalView;
