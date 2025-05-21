@@ -183,23 +183,32 @@ pcsSnap.forEach(pcSnap => {
   });
 });
 
-// Gestion des clics sur la vue d'ensemble
-if (window.location.hash === "#global") {
-  document.getElementById("globalTbody").addEventListener("click", async ev => {
-    if (ev.target.tagName !== "BUTTON") return;
-    const pc = ev.target.dataset.pc;
-    const section = ev.target.dataset.sec;
-    const desc = decodeURIComponent(ev.target.dataset.desc);
-    if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
-    const pcRef = doc(db, "computers", pc);
-    await updateDoc(pcRef, { [section]: arrayRemove(desc) });
-    showGlobalView();
-  });
+// Gestion des clics sur la vue d'ensemble (attaché une seule fois)
+if (!window.globalTbodyListenerAttached) {
+  const globalTbody = document.getElementById("globalTbody");
+  if (globalTbody) {
+    globalTbody.addEventListener("click", async ev => {
+      if (ev.target.tagName !== "BUTTON") return;
+      const pc = ev.target.dataset.pc;
+      const section = ev.target.dataset.sec;
+      const desc = decodeURIComponent(ev.target.dataset.desc);
+      if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
+      const pcRef = doc(db, "computers", pc);
+      await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+      showGlobalView();
+    });
+    window.globalTbodyListenerAttached = true;
+  }
 }
 
-function setTableHeader(cols) {
-  const thead = document.querySelector("thead");
-  thead.innerHTML =
-    "<tr>" + cols.map(txt => `<th>${txt}</th>`).join("") + "</tr>";
-}
+// Fonction inutilisée dans la vue d'ensemble
+// function setTableHeader(cols) {
+//   const thead = document.querySelector("thead");
+//   thead.innerHTML =
+//     "<tr>" + cols.map(txt => `<th>${txt}</th>`).join("") + "</tr>";
+// }
+
+// Appel automatique de showGlobalView si hash = #global
+if (window.location.hash === "#global") {
+  showGlobalView();
 }
