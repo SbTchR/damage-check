@@ -71,7 +71,6 @@ const data = (await getDoc(pcRef)).data();
 /* ------ Gestion des boutons ------ */
 let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
 
-document.addEventListener("DOMContentLoaded", function() {
 
   /* ------ Navigation de section ------ */
 
@@ -207,5 +206,3 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   updateProgressBar();
-
-});
