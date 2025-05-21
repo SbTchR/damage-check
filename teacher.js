@@ -87,47 +87,70 @@ function render(){
 function drawTable(){
   tbody.innerHTML = "";
 
-  const added = new Set();
+  /* Étape 1 — construire un dictionnaire "clé -> infos les plus récentes" */
+  // clé   : "section|description"
+  // value : { whenStr, userStr }
+  const latestMap = new Map();
 
-  // helper to push a row
-  const pushRow = (sec, desc, whenStr, userStr, isUnres) =>{
-    if (onlyUnresToggle && onlyUnresToggle.checked && !isUnres) return;
-    const key = `${sec}|${desc}`;
-    if (added.has(key)) return;
-    added.add(key);
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${whenStr}</td>
-      <td>${userStr}</td>
-      <td>${label(sec)}</td>
-      <td>${desc}</td>
-      <td>${isUnres ? "❌" : "✅"}</td>
-      <td>
-        <button data-sec="${sec}"
-                data-desc="${encodeURIComponent(desc)}"
-                data-res="${isUnres}">
-          ${isUnres ? "Marquer réglé" : "Marquer non réglé"}
-        </button>
-      </td>`;
-    tbody.appendChild(tr);
-  };
-
-  // A) unresolved arrays
-  ["keyboard","mouse","screen","other"].forEach(sec=>{
-    unresolved[sec].forEach(desc=>{
-      pushRow(sec, desc, "", "", true);
-    });
-  });
-
-  // B) reports cache
+  // reportCache est déjà trié par date descendante
   reportCache.forEach(r=>{
     const whenStr = r.when ? new Date(r.when.seconds*1000).toLocaleString() : "";
     const userStr = r.user ?? "";
-    r.items.forEach(item=>{
-      if(onlyDamages.checked && item.desc==="rien") return;
-      const isUnres = unresolved[item.section]?.includes(item.desc);
-      pushRow(item.section, item.desc, whenStr, userStr, isUnres);
+    r.items.forEach(it=>{
+      const key = `${it.section}|${it.desc}`;
+      if (!latestMap.has(key)){        // garde la plus récente (on est en desc)
+        latestMap.set(key, {whenStr, userStr});
+      }
     });
+  });
+
+  /* Étape 2 — ordre chronologique : on parcourt encore reportCache desc
+                et on affiche UNE seule ligne par dégât */
+  const added = new Set();
+
+  const pushRow = (sec, desc, whenStr, userStr, isUnres)=>{
+      if (onlyDamages.checked && desc==="rien") return;
+      if (onlyUnresToggle && onlyUnresToggle.checked && !isUnres) return;
+
+      const key = `${sec}|${desc}`;
+      if (added.has(key)) return;
+      added.add(key);
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${whenStr}</td>
+        <td>${userStr}</td>
+        <td>${label(sec)}</td>
+        <td>${desc}</td>
+        <td>${isUnres ? "❌" : "✅"}</td>
+        <td>
+          <button data-sec="${sec}"
+                  data-desc="${encodeURIComponent(desc)}"
+                  data-res="${isUnres}">
+            ${isUnres ? "Marquer réglé" : "Marquer non réglé"}
+          </button>
+        </td>`;
+      tbody.appendChild(tr);
+  };
+
+  // A) lignes issues des rapports (ordre chrono déjà correct)
+  reportCache.forEach(r=>{
+     r.items.forEach(it=>{
+        const key = `${it.section}|${it.desc}`;
+        if (added.has(key)) return;
+        const meta = latestMap.get(key) ?? {whenStr:"", userStr:""};
+        const isUnres = unresolved[it.section]?.includes(it.desc);
+        pushRow(it.section, it.desc, meta.whenStr, meta.userStr, isUnres);
+     });
+  });
+
+  // B) éventuels dégâts non résolus jamais vus dans reportCache
+  ["keyboard","mouse","screen","other"].forEach(sec=>{
+     unresolved[sec].forEach(desc=>{
+        const key = `${sec}|${desc}`;
+        if (added.has(key)) return;
+        pushRow(sec, desc, "", "", true);
+     });
   });
 }
 
