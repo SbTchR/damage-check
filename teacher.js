@@ -153,7 +153,6 @@ async function showGlobalView() {
         latest[pc][key] = { when, section: item.section, desc: item.desc };
       }
     });
-    document.getElementById("tabGlobal").onclick = showGlobalView;
   });
 
 // Pour chaque PC, chaque section, chaque dégât non réglé
@@ -203,4 +202,6 @@ function setTableHeader(cols) {
   thead.innerHTML =
     "<tr>" + cols.map(txt => `<th>${txt}</th>`).join("") + "</tr>";
 }
+
+document.getElementById("tabGlobal").onclick = showGlobalView;
 }
