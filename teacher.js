@@ -127,9 +127,10 @@ function label(sec){
 
 // ----- VUE D'ENSEMBLE -----
 async function showGlobalView() {
+  const globalTbody = document.getElementById("globalTbody");
   // Construction du header spécial
   setTableHeader(["PC", "Date", "Type", "Description", "Statut", "Action"]);
-  tbody.innerHTML = "";
+  globalTbody.innerHTML = "";
 
   // Récupérer tous les PC
   const pcsSnap = await getDocs(collection(db, "computers"));
@@ -178,7 +179,7 @@ async function showGlobalView() {
               Marquer réglé
             </button>
           </td>`;
-        tbody.appendChild(tr);
+        globalTbody.appendChild(tr);
       });
     });
   });
