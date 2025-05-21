@@ -69,6 +69,7 @@ const data = (await getDoc(pcRef)).data();
 });
 
 /* ------ Navigation de section ------ */
+
 let current = 0;
 const sections = Array.from(document.querySelectorAll(".section"));
 // possibilité de faire apparaître une consigne sur la première section si tu le veux dans le HTML
@@ -77,6 +78,20 @@ function show(i){
   updateProgressBar();
 }
 show(current);
+
+// Gestion de la page d'accueil : au clic sur "Commencer", on masque la section d'accueil et on affiche la première vraie section du formulaire
+const welcomeBtn = document.getElementById("welcomeStart");
+if (welcomeBtn) {
+  welcomeBtn.onclick = () => {
+    // Cache la section de bienvenue et affiche la première vraie section (index 1)
+    sections[0].classList.add("hidden");
+    current = 1;
+    show(current);
+  };
+  // Masque toutes les autres sections sauf la section d'accueil au démarrage
+  sections.forEach((s, idx) => s.classList.toggle("hidden", idx !== 0));
+  updateProgressBar();
+}
 
 /* ------ Gestion des boutons ------ */
 let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
