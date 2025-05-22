@@ -42,6 +42,10 @@ h4 {
   padding: 2.5em 2em 2em 2em;
   transition: box-shadow 0.2s;
 }
+.section-wide {
+  max-width: 600px;
+  min-width: 320px;
+}
 .section ul {
   margin-bottom: 1.2em;
 }
@@ -149,6 +153,17 @@ h4 {
   border-radius: 0.9em;
   margin: 0.5em 0.7em 0.5em 0;
 }
+#modal button {
+  display: inline-block;
+}
+#modal .modal-btns {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
 #pwdModal ul {
   margin: 1.2em 0 0.7em 0;
   padding: 0 1em;
@@ -234,40 +249,42 @@ h4 {
 <div id="section-keyboard"  class="section hidden">
   <h3>⌨️ Clavier</h3>
   <ul id="list-keyboard"></ul>
-  <button data-sec="keyboard" data-nothing>Rien à signaler</button>
+  <button data-sec="keyboard" data-nothing>Rien à signaler ⏩︎</button>
   <button data-sec="keyboard" data-new>Signaler un nouveau dégât</button>
 </div>
 
 <div id="section-mouse"  class="section hidden">
   <h3>🐭 Souris / Trackpad</h3>
   <ul id="list-mouse"></ul>
-  <button data-sec="mouse" data-nothing>Rien à signaler</button>
+  <button data-sec="mouse" data-nothing>Rien à signaler ⏩︎</button>
   <button data-sec="mouse" data-new>Signaler un nouveau dégât</button>
-  <button data-back>Précédent</button>
+  <button data-back>⏪︎ Précédent</button>
 </div>
 
 <div id="section-screen"  class="section hidden">
   <h3>🖥️ Écran</h3>
   <ul id="list-screen"></ul>
-  <button data-sec="screen" data-nothing>Rien à signaler</button>
+  <button data-sec="screen" data-nothing>Rien à signaler ⏩︎</button>
   <button data-sec="screen" data-new>Signaler un nouveau dégât</button>
-  <button data-back>Précédent</button>
+  <button data-back>⏪︎ Précédent</button>
 </div>
 
-<div id="section-other"  class="section hidden">
+<div id="section-other"  class="section section-wide hidden">
   <h3>🛠️ Autres</h3>
   <ul id="list-other"></ul>
-  <button data-sec="other" data-nothing>Rien à signaler et terminer la vérification</button>
+  <button data-sec="other" data-nothing>Rien à signaler et terminer la vérification ✔︎</button>
   <button data-sec="other" data-new>Signaler un nouveau dégât</button>
-  <button data-back>Précédent</button>
+  <button data-back>⏪︎ Précédent</button>
 </div>
 
 <!-- Dialogue nouveau dégât -->
 <div id="modal" class="hidden">
   <h4 id="modal-title"></h4>
   <input type="text" id="damageDesc" placeholder="Décris le dégât…" />
-  <button id="cancel">Annuler</button>
-  <button id="save">Enregistrer</button>
+  <div class="modal-btns">
+    <button id="cancel">Annuler</button>
+    <button id="save">Enregistrer</button>
+  </div>
 </div>
 
 <!-- Validation professeur -->
