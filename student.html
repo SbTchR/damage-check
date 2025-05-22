@@ -47,7 +47,7 @@ h4 {
 }
 .section button {
   margin: 0.4em 0.4em 0 0;
-  font-size: 1em;
+  font-size: 1.1em;
   padding: 0.7em 2.2em;
   border: none;
   border-radius: 1em;
@@ -57,6 +57,11 @@ h4 {
   font-weight: 600;
   box-shadow: 0 1px 7px 0 #0077ff1a;
   transition: background 0.3s, box-shadow 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7em;
+  box-sizing: border-box;
 }
 .section button:hover, .section button:focus {
   background: linear-gradient(90deg,#005ccf,#00b4cc);
@@ -106,12 +111,14 @@ h4 {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   z-index: 50;
-  background: rgba(0, 119, 255, 0.16);
+  background: rgba(245, 252, 255, 0.94);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   margin: 0;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  border-radius: 18px;
 }
 #modal > *, #pwdModal > * {
   font-size: 1.1em;
@@ -121,15 +128,19 @@ h4 {
 }
 #modal h4, #pwdModal h4 {
   color: #0077ff;
+  text-shadow: 0 1px 4px #bbe1ff99;
 }
 #modal input, #pwdModal input {
   font-size: 1.1em;
   padding: 0.6em 1.2em;
   border-radius: 0.7em;
-  border: 1.2px solid #c7e3ff;
+  border: 1.2px solid #bbe1ff;
   margin: 1em 0;
   width: 90%;
   max-width: 320px;
+  background: #fafdff;
+  box-shadow: 0 2px 8px #0077ff0e;
+  color: #222;
 }
 #modal button, #pwdModal button {
   width: 140px;
@@ -201,7 +212,7 @@ h4 {
   <h2>Bienvenue&nbsp;!</h2>
   <p>
     <div class="big-important">
-      <b>❗ Avant d’utiliser cet ordinateur, tu dois <span class="important-red">🔴 obligatoirement</span> remplir ce questionnaire.</b><br>
+      <b>❗ Avant d’utiliser cet ordinateur, tu dois <span class="important-red">obligatoirement</span> remplir ce questionnaire.</b><br>
       <b style="display:block; margin-top:0.7em;">⛔ Tu <span class="important-red">ne dois pas quitter</span> cette page tant que le formulaire n’aura pas été rempli.</b>
     </div>
     <br>
