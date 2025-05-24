@@ -96,28 +96,26 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   const headphoneDetails = document.getElementById("headphone-details");
   const headphoneNumber = document.getElementById("headphoneNumber");
   const newHeadphoneDamage = document.getElementById("newHeadphoneDamage");
+  const btnNoHeadphone = document.getElementById("btnNoHeadphone");
 
-  if (headphoneRadios && headphoneDetails) {
+  if (headphoneRadios && headphoneDetails && btnNoHeadphone) {
     headphoneRadios.forEach(radio => {
       radio.onchange = () => {
         if (radio.value === "oui" && radio.checked) {
           headphoneDetails.classList.remove("hidden");
+          btnNoHeadphone.classList.add("hidden");
         } else if (radio.value === "non" && radio.checked) {
           headphoneDetails.classList.add("hidden");
+          btnNoHeadphone.classList.remove("hidden");
         }
       };
     });
+    btnNoHeadphone.onclick = nextSection;
   }
 
   if (newHeadphoneDamage) {
-    newHeadphoneDamage.onclick = async () => {
-      const num = headphoneNumber.value.trim();
-      const desc = prompt("Décris le dégât sur les écouteurs :", "");
-      if (!desc) return;
-      const obj = { numero: num || "?", description: desc };
-      pendingReports.push({ section: "headphones", desc: `N°${obj.numero} : ${obj.description}` });
-      await updateDoc(pcRef, { headphones: arrayUnion(obj) });
-      nextSection();
+    newHeadphoneDamage.onclick = () => {
+      openModal("headphones");
     };
   }
 
@@ -152,6 +150,7 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
       headphoneRadios.forEach(r => r.checked = false);
       headphoneDetails.classList.add("hidden");
       headphoneNumber.value = "";
+      if (btnNoHeadphone) btnNoHeadphone.classList.add("hidden");
     }
   }
   show(current);
@@ -192,8 +191,17 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
     saveBtn.onclick = async () => {
         const txt = document.getElementById("damageDesc").value.trim();
         if(!txt) return;
-        pendingReports.push({ section:sec, desc:txt });
-        await updateDoc(pcRef, { [sec]: arrayUnion(txt) });
+        let desc = txt;
+        if (sec === "headphones" && headphoneNumber) {
+          const num = headphoneNumber.value.trim();
+          if (!num) { alert("Merci d'indiquer le numéro de la paire d'écouteurs."); return; }
+          desc = `N°${num} : ${txt}`;
+          pendingReports.push({ section:sec, desc });
+          await updateDoc(pcRef, { [sec]: arrayUnion({ numero: num, description: txt }) });
+        } else {
+          pendingReports.push({ section:sec, desc:txt });
+          await updateDoc(pcRef, { [sec]: arrayUnion(txt) });
+        }
         closeModal();
         nextSection();
     };

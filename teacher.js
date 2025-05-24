@@ -122,7 +122,7 @@ tbody.addEventListener("click", async ev=>{
 });
 
 function label(sec){
-  return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",other:"Autres",none:"—"}[sec];
+  return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",headphones:"Écouteurs",other:"Autres",none:"—"}[sec] || sec;
 }
 
 // ----- VUE D'ENSEMBLE -----
@@ -160,7 +160,7 @@ async function showGlobalView() {
   pcsSnap.forEach(pcSnap => {
     const pcId = pcSnap.id;
     const data = pcSnap.data() ?? {};
-    ["keyboard", "mouse", "screen", "other"].forEach(sec => {
+    ["keyboard", "mouse", "screen", "headphones", "other"].forEach(sec => {
       const arr = Array.isArray(data[sec]) ? data[sec] : [];
       arr.forEach(desc => {
         const key = `${sec}|${desc}`;
