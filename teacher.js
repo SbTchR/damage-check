@@ -290,7 +290,7 @@ async function showGlobalView() {
           isUnres = true;
         } else {
           descText = desc;
-          isUnres = false; // We don't have regle info for primitives here
+          isUnres = true; // toujours non réglé pour la vue d'ensemble
         }
         const key = `${sec}|${typeof desc === "object" ? JSON.stringify(desc) : desc}`;
         const found = latest[pcId]?.[key];
