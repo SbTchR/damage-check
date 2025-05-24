@@ -17,10 +17,15 @@ function isHeadphoneDamage(val) {
   return val && typeof val === "object" && ("description" in val) && ("numero" in val); 
 }
 
+function normalizeText(s){
+  return String(s).trim().toLowerCase().replace(/\s+/g," ");
+}
+
 // Helper to compare headphone damage objects by description and number
 function headphoneDamageEquals(a, b) {
   if (!isHeadphoneDamage(a) || !isHeadphoneDamage(b)) return false;
-  return a.description === b.description && a.numero === b.numero;
+  return normalizeText(a.description) === normalizeText(b.description) &&
+         normalizeText(a.numero)      === normalizeText(b.numero);
 }
 
 // Lance le tableau de bord dès le chargement
@@ -162,7 +167,7 @@ tbody.addEventListener("click", async ev=>{
     if (section === "headphones" && isHeadphoneDamage(desc)) {
       newArr = arr.filter(d => !headphoneDamageEquals(d, desc));
     } else {
-      newArr = arr.filter(d => d !== desc);
+      newArr = arr.filter(d => normalizeText(d) !== normalizeText(desc));
     }
     await setDoc(pcRef, { [section]: newArr }, { merge: true });
     ev.target.closest("tr")?.remove();
@@ -327,7 +332,7 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
     if (section === "headphones" && isHeadphoneDamage(desc)) {
       newArr = arr.filter(d => !headphoneDamageEquals(d, desc));
     } else {
-      newArr = arr.filter(d => d !== desc);
+      newArr = arr.filter(d => normalizeText(d) !== normalizeText(desc));
     }
     await setDoc(pcRef, { [section]: newArr }, { merge: true });
     ev.target.closest("tr")?.remove();
@@ -335,7 +340,6 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
     return; // done
   }
   if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
-  const pcRef = doc(db, "computers", pc);
 
   if (section === "headphones" && isHeadphoneDamage(desc)) {
     // For headphone damage objects, remove the object from array (no regle field)
