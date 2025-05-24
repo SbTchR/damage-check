@@ -50,7 +50,7 @@ const newList   = document.getElementById("newList");
 const pwdInput  = document.getElementById("pwdInput");
 const pwdOk     = document.getElementById("pwdOk");
 const pwdCancel = document.getElementById("pwdCancel");
-const PROF_PWD  = "Patefacite";
+const PROF_PWD  = "0dga";
 
 /* ------ Récupérer dégâts non résolus ------ */
 const pcRef = doc(db, "computers", pcId);
