@@ -159,6 +159,8 @@ tbody.addEventListener("click", async ev=>{
     } else {
       await updateDoc(pcRef, { [section]: arrayRemove(desc) });
     }
+    // remove row from UI immediately
+    ev.target.closest("tr")?.remove();
     return; // done
   }
 
@@ -315,6 +317,7 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
     } else {
       await updateDoc(pcRef, { [section]: arrayRemove(desc) });
     }
+    ev.target.closest("tr")?.remove();
     showGlobalView();
     return; // done
   }
