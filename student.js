@@ -88,7 +88,8 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
     document.getElementById('section-mouse'),
     document.getElementById('section-screen'),
     document.getElementById('section-headphones'),
-    document.getElementById('section-other')
+    document.getElementById('section-other'),
+    document.getElementById('section-rules')       // nouvelle étape
   ];
 
   // --- Gestion écouteurs
@@ -116,6 +117,24 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   if (newHeadphoneDamage) {
     newHeadphoneDamage.onclick = () => {
       openModal("headphones");
+    };
+  }
+
+  // --- Section Règles ---
+  const rulesAgree  = document.getElementById("rulesAgree");
+  const rulesFinish = document.getElementById("rulesFinish");
+
+  if (rulesAgree && rulesFinish) {
+    rulesAgree.onchange = () => {
+      if (rulesAgree.checked) {
+        rulesFinish.classList.remove("hidden");
+      } else {
+        rulesFinish.classList.add("hidden");
+      }
+    };
+    rulesFinish.onclick = async () => {
+      // On considère que les règles sont acceptées et on envoie le report
+      await sendReports();
     };
   }
 
@@ -151,6 +170,10 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
       headphoneDetails.classList.add("hidden");
       headphoneNumber.value = "";
       if (btnNoHeadphone) btnNoHeadphone.classList.add("hidden");
+    }
+    if (sections[i].id === "section-rules" && rulesAgree && rulesFinish){
+      rulesAgree.checked = false;
+      rulesFinish.classList.add("hidden");
     }
   }
   show(current);
