@@ -57,14 +57,22 @@ const pcRef = doc(db, "computers", pcId);
 const pcSnap = await getDoc(pcRef);
 if (!pcSnap.exists()) {
   // crée le doc vide si besoin
-  await setDoc(pcRef, { keyboard: [], mouse: [], screen: [], other: [] });
+  await setDoc(pcRef, { keyboard: [], mouse: [], screen: [], other: [], headphones: [] });
 }
 
 const data = (await getDoc(pcRef)).data();
-["keyboard","mouse","screen","other"].forEach(sec=>{
+["keyboard","mouse","screen","headphones","other"].forEach(sec=>{
   const ul = document.getElementById(`list-${sec}`);
+  if (!ul || !data[sec]) return;
   data[sec].forEach(d => {
-    const li = document.createElement("li"); li.textContent = d; ul.appendChild(li);
+    // Pour headphones, si c'est un objet, affiche numéro + description
+    if (sec === "headphones" && typeof d === "object" && d !== null) {
+      const li = document.createElement("li");
+      li.textContent = `N°${d.numero || "?"} : ${d.description || d.desc || ""}`;
+      ul.appendChild(li);
+    } else {
+      const li = document.createElement("li"); li.textContent = d; ul.appendChild(li);
+    }
   });
 });
 
@@ -79,8 +87,40 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
     document.getElementById('section-keyboard'),
     document.getElementById('section-mouse'),
     document.getElementById('section-screen'),
+    document.getElementById('section-headphones'),
     document.getElementById('section-other')
   ];
+
+  // --- Gestion écouteurs
+  const headphoneRadios = document.getElementsByName("headphoneUse");
+  const headphoneDetails = document.getElementById("headphone-details");
+  const headphoneNumber = document.getElementById("headphoneNumber");
+  const newHeadphoneDamage = document.getElementById("newHeadphoneDamage");
+
+  if (headphoneRadios && headphoneDetails) {
+    headphoneRadios.forEach(radio => {
+      radio.onchange = () => {
+        if (radio.value === "oui" && radio.checked) {
+          headphoneDetails.classList.remove("hidden");
+        } else if (radio.value === "non" && radio.checked) {
+          headphoneDetails.classList.add("hidden");
+        }
+      };
+    });
+  }
+
+  if (newHeadphoneDamage) {
+    newHeadphoneDamage.onclick = async () => {
+      const num = headphoneNumber.value.trim();
+      const desc = prompt("Décris le dégât sur les écouteurs :", "");
+      if (!desc) return;
+      const obj = { numero: num || "?", description: desc };
+      pendingReports.push({ section: "headphones", desc: `N°${obj.numero} : ${obj.description}` });
+      await updateDoc(pcRef, { headphones: arrayUnion(obj) });
+      nextSection();
+    };
+  }
+
   let current = 0;
 
   // -------- Barre de progression --------
@@ -108,6 +148,11 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   function show(i){
     sections.forEach((s,idx)=>s.classList.toggle("hidden",idx!==i));
     updateProgressBar();
+    if (sections[i].id === "section-headphones") {
+      headphoneRadios.forEach(r => r.checked = false);
+      headphoneDetails.classList.add("hidden");
+      headphoneNumber.value = "";
+    }
   }
   show(current);
 
@@ -202,7 +247,7 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   }
 
   function label(sec){
-    return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",other:"Autres"}[sec];
+    return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",headphones:"Écouteurs",other:"Autres"}[sec];
   }
 
   updateProgressBar();

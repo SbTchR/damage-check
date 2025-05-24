@@ -281,6 +281,30 @@ h4 {
   <button data-back>⏪︎ Précédent</button>
 </div>
 
+<div id="section-headphones" class="section section-wide hidden">
+  <h3>🎧 Écouteurs</h3>
+  <div class="already-signaled-title">Dégâts déjà signalés :</div>
+  <ul id="list-headphones"></ul>
+
+  <label style="margin-top:1.2em; display:block; font-weight:600;">
+    J'utilise une paire d'écouteurs :
+  </label>
+  <div style="margin:0.6em 0 1em 0;display:flex;gap:2em;">
+    <label><input type="radio" name="headphoneUse" value="oui" /> Oui</label>
+    <label><input type="radio" name="headphoneUse" value="non" /> Non</label>
+  </div>
+
+  <div id="headphone-details" class="hidden" style="margin-bottom:1.2em;">
+    <label for="headphoneNumber" style="font-weight:500;">
+      Numéro de la paire d'écouteurs :
+    </label>
+    <input type="text" id="headphoneNumber" placeholder="Ex : 17" style="margin-left:0.7em;max-width:110px;" />
+    <button id="newHeadphoneDamage" style="margin-left:1.3em;">Signaler un nouveau dégât</button>
+  </div>
+
+  <button data-back>⏪︎ Précédent</button>
+</div>
+
 <div id="section-other"  class="section section-wide hidden">
   <h3>🛠️ Autres</h3>
   <div class="already-signaled-title">Dégâts déjà signalés :</div>
