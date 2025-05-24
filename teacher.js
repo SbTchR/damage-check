@@ -6,7 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 let currentPC   = "01";
-let unresolved  = {keyboard:[],mouse:[],screen:[],other:[]};
+let unresolved  = {keyboard:[],mouse:[],screen:[],headphones:[],other:[]};
 let reportCache = []; // array of {when,user,items}
 let unsubReports = null;
 let unsubUnres   = null;
@@ -64,7 +64,7 @@ function render(){
       if (snap.exists()){
           unresolved = snap.data();
       } else {
-          unresolved = {keyboard:[],mouse:[],screen:[],other:[]};
+          unresolved = {keyboard:[],mouse:[],screen:[],headphones:[],other:[]};
       }
       drawTable();
   });
