@@ -242,7 +242,14 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
 
   async function sendReports(){
       if (pendingReports.length === 0){
-          pendingReports.push({section:"none", desc:"rien"});
+          // Ajoute un enregistrement unique contenant date & heure pour conserver chaque connexion
+          const now    = new Date();
+          const stamp  = now.toLocaleString("fr-CH", { hour: "2-digit", minute: "2-digit", second:"2-digit" });
+          const day    = now.toLocaleDateString("fr-CH");
+          pendingReports.push({
+              section: "none",
+              desc   : `${day} ${stamp}`   // ex. 24.5.2025 14:07:32
+          });
       }
       await addDoc(collection(db,"reports"), {
         pcId, user:userId, when: serverTimestamp(), items: pendingReports, resolved:false
