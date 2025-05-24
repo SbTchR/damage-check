@@ -212,14 +212,15 @@ h4 {
 </style>
   <!-- Empêche la fermeture tant que le formulaire n'est pas envoyé -->
   <script>
-    let isSubmitted = false;
+    window.isSubmitted = false;            // variable vraiment globale
     function blockUnload(e){
-      if (!isSubmitted) {
+      if (!window.isSubmitted) {
         e.preventDefault();
         e.returnValue = "Tu dois remplir le questionnaire avant de quitter !";
         return "Tu dois remplir le questionnaire avant de quitter !";
       }
     }
+    window.blockUnload = blockUnload;      // exposer la référence pour le module
     window.addEventListener("beforeunload", blockUnload);
 
     // Change le titre si l'élève essaie d'aller ailleurs
