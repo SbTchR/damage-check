@@ -2,7 +2,8 @@
 import { db } from "./firebase-config.js";
 import {
   collection, query, where, onSnapshot,
-  getDocs, updateDoc, doc, arrayRemove, arrayUnion, getDoc, setDoc
+  getDocs, updateDoc, doc, arrayRemove, arrayUnion, getDoc,
+  setDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 let currentPC   = "01";
@@ -78,7 +79,11 @@ function render(){
   const q = query(collection(db,"reports"), where("pcId","==",pc));
   unsubReports = onSnapshot(q,(snap)=>{
       reportCache = [];
-      snap.forEach(ds=> reportCache.push(ds.data()));
+      snap.forEach(ds=>{
+        const d = ds.data();
+        d._id = ds.id;           // keep the doc id for later deletion
+        reportCache.push(d);
+      });
       reportCache.sort((a,b)=> b.when?.seconds - a.when?.seconds);
       drawTable();
   });
@@ -113,6 +118,7 @@ function drawTable() {
       if (onlyDamages.checked && descText === "rien") return;
 
       const key = `${item.section}|${typeof item.desc === "object" ? JSON.stringify(item.desc) : item.desc}`;
+      const repId = r._id;
       if (shown.has(key)) return;          // un seul affichage par dégât
       shown.add(key);
 
@@ -127,12 +133,14 @@ function drawTable() {
         <td>${isUnres ? "❌" : "✅"}</td>
         <td>
           <button data-action="toggle"
+                  data-rep="${repId}"
                   data-sec="${item.section}"
                   data-desc="${encodeURIComponent(JSON.stringify(item.desc))}"
                   data-res="${isUnres}">
             ${isUnres ? "Marquer réglé" : "Marquer non réglé"}
           </button>
           <button data-action="delete"
+                  data-rep="${repId}"
                   data-sec="${item.section}"
                   data-desc="${encodeURIComponent(JSON.stringify(item.desc))}">
             Supprimer
@@ -170,6 +178,26 @@ tbody.addEventListener("click", async ev=>{
       newArr = arr.filter(d => normalizeText(d) !== normalizeText(desc));
     }
     await setDoc(pcRef, { [section]: newArr }, { merge: true });
+    const repId = ev.target.dataset.rep;
+    if (repId){
+      const repRef = doc(db,"reports",repId);
+      const repSnap = await getDoc(repRef);
+      if (repSnap.exists()){
+        const repData = repSnap.data();
+        const items = Array.isArray(repData.items)?repData.items:[];
+        let newItems;
+        if (section==="headphones" && isHeadphoneDamage(desc)){
+          newItems = items.filter(it=> !(it.section===section && headphoneDamageEquals(it.desc, desc)));
+        }else{
+          newItems = items.filter(it=> !(it.section===section && normalizeText(it.desc)===normalizeText(desc)));
+        }
+        if (newItems.length){
+          await setDoc(repRef,{items:newItems},{merge:true});
+        }else{
+          await deleteDoc(repRef);      // no items left, delete whole report
+        }
+      }
+    }
     ev.target.closest("tr")?.remove();
     if (globalTbody) showGlobalView();
     return; // done
@@ -238,7 +266,7 @@ async function showGlobalView() {
       const key = `${item.section}|${typeof item.desc === "object" ? JSON.stringify(item.desc) : item.desc}`;
       // Ne garde que la date la plus récente
       if (!latest[pc][key] || when > latest[pc][key].when) {
-        latest[pc][key] = { when, section: item.section, desc: item.desc };
+        latest[pc][key] = { when, section: item.section, desc: item.desc, _id: ds.id };
       }
     });
   });
@@ -268,6 +296,7 @@ async function showGlobalView() {
         const found = latest[pcId]?.[key];
         const when = found ? found.when : new Date(0);
         const whenStr = found ? found.when.toLocaleString() : "";
+        const repId = found? found._id : null;
         rows.push({
           pcId,
           sec,
@@ -276,6 +305,7 @@ async function showGlobalView() {
           isUnres,
           when,
           whenStr,
+          repId,
         });
       });
     });
@@ -285,7 +315,7 @@ async function showGlobalView() {
   rows.sort((a, b) => b.when - a.when);
 
   // 3. Afficher
-  rows.forEach(({pcId, sec, desc, descText, isUnres, whenStr}) => {
+  rows.forEach(({pcId, sec, desc, descText, isUnres, whenStr, repId}) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${pcId}</td>
@@ -295,11 +325,11 @@ async function showGlobalView() {
       <td>${isUnres ? "❌" : "✅"}</td>
       <td>
         <button data-action="toggle"
-                data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(JSON.stringify(desc))}">
+                data-pc="${pcId}" data-rep="${repId}" data-sec="${sec}" data-desc="${encodeURIComponent(JSON.stringify(desc))}">
           Marquer réglé
         </button>
         <button data-action="delete"
-                data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(JSON.stringify(desc))}">
+                data-pc="${pcId}" data-rep="${repId}" data-sec="${sec}" data-desc="${encodeURIComponent(JSON.stringify(desc))}">
           Supprimer
         </button>
       </td>`;
@@ -335,6 +365,26 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
       newArr = arr.filter(d => normalizeText(d) !== normalizeText(desc));
     }
     await setDoc(pcRef, { [section]: newArr }, { merge: true });
+    const repId = ev.target.dataset.rep;
+    if (repId){
+      const repRef = doc(db,"reports",repId);
+      const repSnap = await getDoc(repRef);
+      if (repSnap.exists()){
+        const repData = repSnap.data();
+        const items = Array.isArray(repData.items)?repData.items:[];
+        let newItems;
+        if (section==="headphones" && isHeadphoneDamage(desc)){
+          newItems = items.filter(it=> !(it.section===section && headphoneDamageEquals(it.desc, desc)));
+        }else{
+          newItems = items.filter(it=> !(it.section===section && normalizeText(it.desc)===normalizeText(desc)));
+        }
+        if (newItems.length){
+          await setDoc(repRef,{items:newItems},{merge:true});
+        }else{
+          await deleteDoc(repRef);      // no items left, delete whole report
+        }
+      }
+    }
     ev.target.closest("tr")?.remove();
     if (globalTbody) showGlobalView();
     return; // done
