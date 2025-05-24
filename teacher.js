@@ -29,6 +29,26 @@ function headphoneDamageEquals(a, b) {
          normalizeText(a.numero)      === normalizeText(b.numero);
 }
 
+// Helper to remove an item from a report (by id), or delete the report if now empty
+async function removeFromReport(repId, section, desc){
+  const repRef = doc(db,"reports",repId);
+  const repSnap = await getDoc(repRef);
+  if (!repSnap.exists()) return;
+  const repData = repSnap.data();
+  const items = Array.isArray(repData.items)?repData.items:[];
+  let newItems;
+  if (section==="headphones" && isHeadphoneDamage(desc)){
+    newItems = items.filter(it=> !(it.section===section && headphoneDamageEquals(it.desc, desc)));
+  }else{
+    newItems = items.filter(it=> !(it.section===section && normalizeText(it.desc)===normalizeText(desc)));
+  }
+  if (newItems.length){
+    await setDoc(repRef,{items:newItems},{merge:true});
+  }else{
+    await deleteDoc(repRef);
+  }
+}
+
 // Lance le tableau de bord dès le chargement
 initDashboard();
 
@@ -180,23 +200,7 @@ tbody.addEventListener("click", async ev=>{
     await setDoc(pcRef, { [section]: newArr }, { merge: true });
     const repId = ev.target.dataset.rep;
     if (repId){
-      const repRef = doc(db,"reports",repId);
-      const repSnap = await getDoc(repRef);
-      if (repSnap.exists()){
-        const repData = repSnap.data();
-        const items = Array.isArray(repData.items)?repData.items:[];
-        let newItems;
-        if (section==="headphones" && isHeadphoneDamage(desc)){
-          newItems = items.filter(it=> !(it.section===section && headphoneDamageEquals(it.desc, desc)));
-        }else{
-          newItems = items.filter(it=> !(it.section===section && normalizeText(it.desc)===normalizeText(desc)));
-        }
-        if (newItems.length){
-          await setDoc(repRef,{items:newItems},{merge:true});
-        }else{
-          await deleteDoc(repRef);      // no items left, delete whole report
-        }
-      }
+      await removeFromReport(repId, section, desc);
     }
     ev.target.closest("tr")?.remove();
     if (globalTbody) showGlobalView();
@@ -367,10 +371,13 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
     await setDoc(pcRef, { [section]: newArr }, { merge: true });
     const repId = ev.target.dataset.rep;
     if (repId){
-      const repRef = doc(db,"reports",repId);
-      const repSnap = await getDoc(repRef);
-      if (repSnap.exists()){
-        const repData = repSnap.data();
+      await removeFromReport(repId, section, desc);
+    } else {
+      // fallback : chercher tous les reports de ce PC et enlever l’item correspondant
+      const q = query(collection(db,"reports"), where("pcId","==",pc));
+      const reports = await getDocs(q);
+      for (const ds of reports.docs){
+        const repData = ds.data();
         const items = Array.isArray(repData.items)?repData.items:[];
         let newItems;
         if (section==="headphones" && isHeadphoneDamage(desc)){
@@ -378,10 +385,13 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
         }else{
           newItems = items.filter(it=> !(it.section===section && normalizeText(it.desc)===normalizeText(desc)));
         }
-        if (newItems.length){
-          await setDoc(repRef,{items:newItems},{merge:true});
-        }else{
-          await deleteDoc(repRef);      // no items left, delete whole report
+        if (newItems.length !== items.length){
+          if (newItems.length){
+            await setDoc(ds.ref,{items:newItems},{merge:true});
+          }else{
+            await deleteDoc(ds.ref);
+          }
+          break; // found and fixed
         }
       }
     }
