@@ -195,8 +195,9 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
         if (sec === "headphones" && headphoneNumber) {
           const num = headphoneNumber.value.trim();
           if (!num) { alert("Merci d'indiquer le numéro de la paire d'écouteurs."); return; }
-          desc = `N°${num} : ${txt}`;
-          pendingReports.push({ section:sec, desc });
+          const hpObj = { numero: num, description: txt };
+          desc = `N°${hpObj.numero} : ${hpObj.description}`;
+          pendingReports.push({ section: sec, desc: hpObj });
           await updateDoc(pcRef, { [sec]: arrayUnion({ numero: num, description: txt }) });
         } else {
           pendingReports.push({ section:sec, desc:txt });
@@ -220,7 +221,11 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
             newList.innerHTML = "";
             pendingReports.forEach(r=>{
                 const li=document.createElement("li");
-                li.textContent = `${label(r.section)} : ${r.desc}`;
+                let txt = r.desc;
+                if (r.section === "headphones" && typeof r.desc === "object") {
+                    txt = `N°${r.desc.numero} : ${r.desc.description}`;
+                }
+                li.textContent = `${label(r.section)} : ${txt}`;
                 newList.appendChild(li);
             });
             pwdModal.classList.remove("hidden");

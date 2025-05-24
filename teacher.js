@@ -121,10 +121,16 @@ function drawTable() {
         <td>${descText}</td>
         <td>${isUnres ? "❌" : "✅"}</td>
         <td>
-          <button data-sec="${item.section}"
+          <button data-action="toggle"
+                  data-sec="${item.section}"
                   data-desc="${encodeURIComponent(JSON.stringify(item.desc))}"
                   data-res="${isUnres}">
             ${isUnres ? "Marquer réglé" : "Marquer non réglé"}
+          </button>
+          <button data-action="delete"
+                  data-sec="${item.section}"
+                  data-desc="${encodeURIComponent(JSON.stringify(item.desc))}">
+            Supprimer
           </button>
         </td>`;
       tbody.appendChild(tr);
@@ -134,6 +140,7 @@ function drawTable() {
 
 tbody.addEventListener("click", async ev=>{
   if(ev.target.tagName !== "BUTTON") return;
+  const action  = ev.target.dataset.action || "toggle";
   const section = ev.target.dataset.sec;
   const descRaw = decodeURIComponent(ev.target.dataset.desc);
   let desc;
@@ -144,6 +151,16 @@ tbody.addEventListener("click", async ev=>{
   }
   const unresolvedNow = ev.target.dataset.res === "true";
   const pcRef = doc(db,"computers", currentPC);
+
+  if (action === "delete") {
+    if (!window.confirm("Supprimer définitivement ce dégât ?")) return;
+    if (section === "headphones" && isHeadphoneDamage(desc)) {
+      await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+    } else {
+      await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+    }
+    return; // done
+  }
 
   if (section === "headphones" && isHeadphoneDamage(desc)) {
     // For headphone damage objects, remove the object from array (no regle field)
@@ -264,8 +281,13 @@ async function showGlobalView() {
       <td>${descText}</td>
       <td>${isUnres ? "❌" : "✅"}</td>
       <td>
-        <button data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(JSON.stringify(desc))}">
+        <button data-action="toggle"
+                data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(JSON.stringify(desc))}">
           Marquer réglé
+        </button>
+        <button data-action="delete"
+                data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(JSON.stringify(desc))}">
+          Supprimer
         </button>
       </td>`;
     globalTbody.appendChild(tr);
@@ -275,6 +297,7 @@ async function showGlobalView() {
 
 document.getElementById("globalTbody").addEventListener("click", async ev => {
   if (ev.target.tagName !== "BUTTON") return;
+  const action  = ev.target.dataset.action || "toggle";
   const pc = ev.target.dataset.pc;
   const section = ev.target.dataset.sec;
   const descRaw = decodeURIComponent(ev.target.dataset.desc);
@@ -283,6 +306,17 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
     desc = JSON.parse(descRaw);
   } catch {
     desc = descRaw;
+  }
+  if (action === "delete") {
+    if (!window.confirm("Supprimer définitivement ce dégât ?")) return;
+    const pcRef = doc(db, "computers", pc);
+    if (section === "headphones" && isHeadphoneDamage(desc)) {
+      await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+    } else {
+      await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+    }
+    showGlobalView();
+    return; // done
   }
   if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
   const pcRef = doc(db, "computers", pc);
