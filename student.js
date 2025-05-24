@@ -14,8 +14,14 @@ function blockUnload(e) {
     return "";
   }
 }
-window.addEventListener("mousedown", activateBeforeUnload, { once: true });
+
+// Active la protection seulement à l'affichage de la première vraie section
+// show(0) est déjà appelé plus bas, donc on ajoute les activateurs ici
+// (évite attachement multiple des listeners)
+// (voir plus bas pour show(0))
+// Ces listeners ne seront activés qu'une fois à la première interaction
 window.addEventListener("keydown", activateBeforeUnload, { once: true });
+window.addEventListener("mousedown", activateBeforeUnload, { once: true });
 window.addEventListener("touchstart", activateBeforeUnload, { once: true });
 
 // Change le titre si l'élève essaie d'aller ailleurs
@@ -301,6 +307,7 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
       // Marquer immédiatement la soumission pour désactiver beforeunload
       isSubmitted = true;
       window.removeEventListener("beforeunload", blockUnload);
+      window.onbeforeunload = null;               // supprime tout handler résiduel
 
       if (pendingReports.length === 0){
           // Ajoute un enregistrement unique contenant date & heure pour conserver chaque connexion
@@ -316,6 +323,8 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
         pcId, user:userId, when: serverTimestamp(), items: pendingReports, resolved:false
       });
       isSubmitted = true;
+      window.removeEventListener("beforeunload", blockUnload);
+      window.onbeforeunload = null;               // supprime tout handler résiduel
       alert("Merci ! Tu peux fermer cette fenêtre.");
       window.close();
   }
@@ -324,6 +333,7 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
     if (current>0){
       current--;
       show(current);
+
     }
   }
 
