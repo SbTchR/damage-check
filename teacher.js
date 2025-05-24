@@ -2,7 +2,7 @@
 import { db } from "./firebase-config.js";
 import {
   collection, query, where, onSnapshot,
-  getDocs, updateDoc, doc, arrayRemove, arrayUnion, getDoc
+  getDocs, updateDoc, doc, arrayRemove, arrayUnion, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 let currentPC   = "01";
@@ -11,6 +11,17 @@ let reportCache = []; // array of {when,user,items}
 let unsubReports = null;
 let unsubUnres   = null;
 let onlyUnresToggle = null;
+
+// Helper to detect headphone damage objects
+function isHeadphoneDamage(val) { 
+  return val && typeof val === "object" && ("description" in val); 
+}
+
+// Helper to compare headphone damage objects by description and number
+function headphoneDamageEquals(a, b) {
+  if (!isHeadphoneDamage(a) || !isHeadphoneDamage(b)) return false;
+  return a.description === b.description && a.numero === b.numero;
+}
 
 // Lance le tableau de bord dès le chargement
 initDashboard();
@@ -79,13 +90,27 @@ function drawTable() {
     const userStr = r.user ?? "";
 
     r.items.forEach(item => {
-      if (onlyDamages.checked && item.desc === "rien") return;
+      // Determine description text and status
+      let descText = "";
+      let isUnres = false;
+      if (isHeadphoneDamage(item.desc)) {
+        descText = item.desc.description ?? item.desc.desc ?? "";
+        isUnres = !(item.desc.regle === true);
+      } else if (typeof item.desc === "object") {
+        // fallback: if object but not headphone damage, try description or toString
+        descText = item.desc.description ?? item.desc.desc ?? JSON.stringify(item.desc);
+        isUnres = true; // assume unresolved if no regle property
+      } else {
+        descText = item.desc;
+        isUnres = unresolved[item.section]?.includes(item.desc);
+      }
 
-      const key = `${item.section}|${item.desc}`;
+      if (onlyDamages.checked && descText === "rien") return;
+
+      const key = `${item.section}|${typeof item.desc === "object" ? JSON.stringify(item.desc) : item.desc}`;
       if (shown.has(key)) return;          // un seul affichage par dégât
       shown.add(key);
 
-      const isUnres = unresolved[item.section]?.includes(item.desc);
       if (onlyUnresToggle?.checked && !isUnres) return;   // filtre « non réglés »
 
       const tr = document.createElement("tr");
@@ -93,11 +118,11 @@ function drawTable() {
         <td>${whenStr}</td>
         <td>${userStr}</td>
         <td>${label(item.section)}</td>
-        <td>${item.desc}</td>
+        <td>${descText}</td>
         <td>${isUnres ? "❌" : "✅"}</td>
         <td>
           <button data-sec="${item.section}"
-                  data-desc="${encodeURIComponent(item.desc)}"
+                  data-desc="${encodeURIComponent(JSON.stringify(item.desc))}"
                   data-res="${isUnres}">
             ${isUnres ? "Marquer réglé" : "Marquer non réglé"}
           </button>
@@ -110,14 +135,41 @@ function drawTable() {
 tbody.addEventListener("click", async ev=>{
   if(ev.target.tagName !== "BUTTON") return;
   const section = ev.target.dataset.sec;
-  const desc    = decodeURIComponent(ev.target.dataset.desc);
+  const descRaw = decodeURIComponent(ev.target.dataset.desc);
+  let desc;
+  try {
+    desc = JSON.parse(descRaw);
+  } catch {
+    desc = descRaw;
+  }
   const unresolvedNow = ev.target.dataset.res === "true";
   const pcRef = doc(db,"computers", currentPC);
 
-  if (unresolvedNow){
-      await updateDoc(pcRef, {[section]: arrayRemove(desc)});
+  if (isHeadphoneDamage(desc)) {
+    // For headphone damage objects, update the regle property inside the array
+    const pcSnap = await getDoc(pcRef);
+    if (!pcSnap.exists()) return;
+    const data = pcSnap.data() ?? {};
+    const arr = Array.isArray(data[section]) ? data[section] : [];
+
+    // Find index of the object to update
+    const idx = arr.findIndex(d => isHeadphoneDamage(d) && headphoneDamageEquals(d, desc));
+    if (idx === -1) return; // not found, nothing to do
+
+    // Update regle property accordingly
+    const newObj = {...arr[idx], regle: !unresolvedNow};
+    const newArr = [...arr];
+    newArr[idx] = newObj;
+
+    // Replace entire array with setDoc (merge:false to update field)
+    await setDoc(pcRef, {[section]: newArr}, {merge:true});
   } else {
-      await updateDoc(pcRef, {[section]: arrayUnion(desc)});
+    // For primitive desc, use arrayRemove/arrayUnion as before
+    if (unresolvedNow){
+        await updateDoc(pcRef, {[section]: arrayRemove(desc)});
+    } else {
+        await updateDoc(pcRef, {[section]: arrayUnion(desc)});
+    }
   }
 });
 
@@ -138,7 +190,7 @@ async function showGlobalView() {
   const reportsSnap = await getDocs(collection(db, "reports"));
 
   // Indexer tous les rapports pour trouver la date la plus récente par dégât/PC
-  const latest = {}; // { pcId: { "section|desc": { when, section, desc } } }
+  const latest = {}; // { pcId: { "section|desc": { when, section, desc, regle } } }
   reportsSnap.forEach(ds => {
     const r = ds.data();
     const pc = r.pcId;
@@ -146,8 +198,10 @@ async function showGlobalView() {
     if (!pc || !when) return;
     if (!latest[pc]) latest[pc] = {};
     r.items.forEach(item => {
-      if (item.desc === "rien") return;
-      const key = `${item.section}|${item.desc}`;
+      // Ignore "rien" damage
+      if ( (typeof item.desc === "string" && item.desc === "rien") ||
+           (isHeadphoneDamage(item.desc) && (item.desc.description === "rien" || item.desc.desc === "rien")) ) return;
+      const key = `${item.section}|${typeof item.desc === "object" ? JSON.stringify(item.desc) : item.desc}`;
       // Ne garde que la date la plus récente
       if (!latest[pc][key] || when > latest[pc][key].when) {
         latest[pc][key] = { when, section: item.section, desc: item.desc };
@@ -163,15 +217,31 @@ async function showGlobalView() {
     ["keyboard", "mouse", "screen", "headphones", "other"].forEach(sec => {
       const arr = Array.isArray(data[sec]) ? data[sec] : [];
       arr.forEach(desc => {
-        const key = `${sec}|${desc}`;
+        // Determine description text and regle status
+        let descText = "";
+        let regle = false;
+        if (isHeadphoneDamage(desc)) {
+          descText = desc.description ?? desc.desc ?? "";
+          regle = desc.regle === true;
+        } else if (typeof desc === "object") {
+          descText = desc.description ?? desc.desc ?? JSON.stringify(desc);
+          regle = false;
+        } else {
+          descText = desc;
+          regle = false; // We don't have regle info for primitives here
+        }
+        const key = `${sec}|${typeof desc === "object" ? JSON.stringify(desc) : desc}`;
         const found = latest[pcId]?.[key];
         const when = found ? found.when : new Date(0);
+        const whenStr = found ? found.when.toLocaleString() : "";
         rows.push({
           pcId,
           sec,
           desc,
-          when, // objet Date
-          whenStr: found ? found.when.toLocaleString() : "",
+          descText,
+          regle,
+          when,
+          whenStr,
         });
       });
     });
@@ -181,16 +251,16 @@ async function showGlobalView() {
   rows.sort((a, b) => b.when - a.when);
 
   // 3. Afficher
-  rows.forEach(({pcId, sec, desc, whenStr}) => {
+  rows.forEach(({pcId, sec, desc, descText, regle, whenStr}) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${pcId}</td>
       <td>${whenStr}</td>
       <td>${label(sec)}</td>
-      <td>${desc}</td>
-      <td>❌</td>
+      <td>${descText}</td>
+      <td>${regle ? "✅" : "❌"}</td>
       <td>
-        <button data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(desc)}">
+        <button data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(JSON.stringify(desc))}">
           Marquer réglé
         </button>
       </td>`;
@@ -203,10 +273,35 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
   if (ev.target.tagName !== "BUTTON") return;
   const pc = ev.target.dataset.pc;
   const section = ev.target.dataset.sec;
-  const desc = decodeURIComponent(ev.target.dataset.desc);
+  const descRaw = decodeURIComponent(ev.target.dataset.desc);
+  let desc;
+  try {
+    desc = JSON.parse(descRaw);
+  } catch {
+    desc = descRaw;
+  }
   if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
   const pcRef = doc(db, "computers", pc);
-  await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+
+  if (isHeadphoneDamage(desc)) {
+    // For headphone damage objects, update regle to true
+    const pcSnap = await getDoc(pcRef);
+    if (!pcSnap.exists()) return;
+    const data = pcSnap.data() ?? {};
+    const arr = Array.isArray(data[section]) ? data[section] : [];
+
+    const idx = arr.findIndex(d => isHeadphoneDamage(d) && headphoneDamageEquals(d, desc));
+    if (idx === -1) return;
+
+    const newObj = {...arr[idx], regle: true};
+    const newArr = [...arr];
+    newArr[idx] = newObj;
+
+    await setDoc(pcRef, {[section]: newArr}, {merge:true});
+  } else {
+    // For primitive desc, remove from unresolved array
+    await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+  }
   showGlobalView();
 });
 
