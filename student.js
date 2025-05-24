@@ -98,6 +98,7 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   const headphoneNumber = document.getElementById("headphoneNumber");
   const newHeadphoneDamage = document.getElementById("newHeadphoneDamage");
   const btnNoHeadphone = document.getElementById("btnNoHeadphone");
+  const noHeadphoneDamage = document.getElementById("noHeadphoneDamage");
 
   if (headphoneRadios && headphoneDetails && btnNoHeadphone) {
     headphoneRadios.forEach(radio => {
@@ -117,6 +118,18 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   if (newHeadphoneDamage) {
     newHeadphoneDamage.onclick = () => {
       openModal("headphones");
+    };
+  }
+
+  // --- Bouton "Aucun dégât" écouteurs ---
+  if (noHeadphoneDamage){
+    noHeadphoneDamage.onclick = () => {
+      const num = headphoneNumber.value.trim();
+      if (!num) { alert("Merci d’indiquer le numéro des écouteurs."); return; }
+      // On enregistre la simple utilisation sans dégât
+      pendingReports.push({ section:"headphones", desc:{ numero:num, description:"aucun dégât" }});
+      // On passe à la section suivante SANS toucher à computers/headphones
+      nextSection();
     };
   }
 
@@ -190,6 +203,7 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
       headphoneDetails.classList.add("hidden");
       headphoneNumber.value = "";
       if (btnNoHeadphone) btnNoHeadphone.classList.add("hidden");
+      if (noHeadphoneDamage) noHeadphoneDamage.classList.remove("hidden");
     }
     if (sections[i].id === "section-rules" && rulesAgree && rulesFinish){
       rulesAgree.checked = false;
