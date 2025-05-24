@@ -304,10 +304,11 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   }
 
   async function sendReports(){
-      // Marquer immédiatement la soumission pour désactiver beforeunload
+      // Désactive définitivement la protection avant de quitter
       isSubmitted = true;
+      userHasInteracted = false;
       window.removeEventListener("beforeunload", blockUnload);
-      window.onbeforeunload = null;               // supprime tout handler résiduel
+      window.onbeforeunload = null;
 
       if (pendingReports.length === 0){
           // Ajoute un enregistrement unique contenant date & heure pour conserver chaque connexion
@@ -322,9 +323,11 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
       await addDoc(collection(db,"reports"), {
         pcId, user:userId, when: serverTimestamp(), items: pendingReports, resolved:false
       });
+      // Désactive définitivement la protection avant de quitter
       isSubmitted = true;
+      userHasInteracted = false;
       window.removeEventListener("beforeunload", blockUnload);
-      window.onbeforeunload = null;               // supprime tout handler résiduel
+      window.onbeforeunload = null;
       alert("Merci ! Tu peux fermer cette fenêtre.");
       window.close();
   }
