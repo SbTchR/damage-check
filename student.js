@@ -133,8 +133,28 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
       }
     };
     rulesFinish.onclick = async () => {
-      // On considère que les règles sont acceptées et on envoie le report
-      await sendReports();
+      // Si des dégâts ont été signalés (pendingReports contient autre chose que "none"),
+      // on affiche la validation prof (mot de passe). Sinon on envoie directement.
+      if (pendingReports.length && !(pendingReports.length === 1 && pendingReports[0].section === "none")) {
+        newList.innerHTML = "";
+        pendingReports.forEach(r => {
+          const li = document.createElement("li");
+          let txt = r.desc;
+          if (r.section === "headphones" && typeof r.desc === "object") {
+            txt = `N°${r.desc.numero} : ${r.desc.description}`;
+          }
+          li.textContent = `${label(r.section)} : ${txt}`;
+          newList.appendChild(li);
+        });
+        pwdModal.classList.remove("hidden");
+        pwdOk.onclick = async () => {
+          if (pwdInput.value !== PROF_PWD) { alert("Mot de passe incorrect"); return; }
+          await sendReports();
+        };
+        pwdCancel.onclick = () => { pwdModal.classList.add("hidden"); };
+      } else {
+        await sendReports();
+      }
     };
   }
 
