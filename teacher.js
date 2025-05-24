@@ -95,7 +95,7 @@ function drawTable() {
       let isUnres = false;
       if (isHeadphoneDamage(item.desc)) {
         descText = `#${item.desc.numero} - ${item.desc.description ?? item.desc.desc ?? ""}`;
-        isUnres = true; // presence means unresolved
+        isUnres = (unresolved["headphones"] || []).some(d => headphoneDamageEquals(d, item.desc));
       } else if (typeof item.desc === "object") {
         // fallback: if object but not headphone damage, try description or toString
         descText = item.desc.description ?? item.desc.desc ?? JSON.stringify(item.desc);
@@ -226,7 +226,7 @@ async function showGlobalView() {
         let isUnres = false;
         if (sec === "headphones" && isHeadphoneDamage(desc)) {
           descText = `#${desc.numero} - ${desc.description ?? desc.desc ?? ""}`;
-          isUnres = true; // presence means unresolved
+          isUnres = (Array.isArray(data["headphones"]) ? data["headphones"] : []).some(d => headphoneDamageEquals(d, desc));
         } else if (typeof desc === "object") {
           descText = desc.description ?? desc.desc ?? JSON.stringify(desc);
           isUnres = true;
