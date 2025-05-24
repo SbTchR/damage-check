@@ -197,7 +197,7 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
           if (!num) { alert("Merci d'indiquer le numéro de la paire d'écouteurs."); return; }
           desc = `N°${num} : ${txt}`;
           pendingReports.push({ section:sec, desc });
-          await updateDoc(pcRef, { [sec]: arrayUnion({ numero: num, description: txt, regle: false }) });
+          await updateDoc(pcRef, { [sec]: arrayUnion({ numero: num, description: txt }) });
         } else {
           pendingReports.push({ section:sec, desc:txt });
           await updateDoc(pcRef, { [sec]: arrayUnion(txt) });

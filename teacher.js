@@ -14,7 +14,7 @@ let onlyUnresToggle = null;
 
 // Helper to detect headphone damage objects
 function isHeadphoneDamage(val) { 
-  return val && typeof val === "object" && ("description" in val); 
+  return val && typeof val === "object" && ("description" in val) && ("numero" in val); 
 }
 
 // Helper to compare headphone damage objects by description and number
@@ -94,8 +94,8 @@ function drawTable() {
       let descText = "";
       let isUnres = false;
       if (isHeadphoneDamage(item.desc)) {
-        descText = item.desc.description ?? item.desc.desc ?? "";
-        isUnres = !(item.desc.regle === true);
+        descText = `#${item.desc.numero} - ${item.desc.description ?? item.desc.desc ?? ""}`;
+        isUnres = true; // presence means unresolved
       } else if (typeof item.desc === "object") {
         // fallback: if object but not headphone damage, try description or toString
         descText = item.desc.description ?? item.desc.desc ?? JSON.stringify(item.desc);
@@ -145,7 +145,11 @@ tbody.addEventListener("click", async ev=>{
   const unresolvedNow = ev.target.dataset.res === "true";
   const pcRef = doc(db,"computers", currentPC);
 
-  if (isHeadphoneDamage(desc)) {
+  if (section === "headphones" && isHeadphoneDamage(desc)) {
+    // For headphone damage objects, remove the object from array (no regle field)
+    await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+  } else if (isHeadphoneDamage(desc)) {
+    // This case no longer applies, but keep fallback for safety
     // For headphone damage objects, update the regle property inside the array
     const pcSnap = await getDoc(pcRef);
     if (!pcSnap.exists()) return;
@@ -190,7 +194,7 @@ async function showGlobalView() {
   const reportsSnap = await getDocs(collection(db, "reports"));
 
   // Indexer tous les rapports pour trouver la date la plus récente par dégât/PC
-  const latest = {}; // { pcId: { "section|desc": { when, section, desc, regle } } }
+  const latest = {}; // { pcId: { "section|desc": { when, section, desc } } }
   reportsSnap.forEach(ds => {
     const r = ds.data();
     const pc = r.pcId;
@@ -217,18 +221,18 @@ async function showGlobalView() {
     ["keyboard", "mouse", "screen", "headphones", "other"].forEach(sec => {
       const arr = Array.isArray(data[sec]) ? data[sec] : [];
       arr.forEach(desc => {
-        // Determine description text and regle status
+        // Determine description text and unresolved status
         let descText = "";
-        let regle = false;
-        if (isHeadphoneDamage(desc)) {
-          descText = desc.description ?? desc.desc ?? "";
-          regle = desc.regle === true;
+        let isUnres = false;
+        if (sec === "headphones" && isHeadphoneDamage(desc)) {
+          descText = `#${desc.numero} - ${desc.description ?? desc.desc ?? ""}`;
+          isUnres = true; // presence means unresolved
         } else if (typeof desc === "object") {
           descText = desc.description ?? desc.desc ?? JSON.stringify(desc);
-          regle = false;
+          isUnres = true;
         } else {
           descText = desc;
-          regle = false; // We don't have regle info for primitives here
+          isUnres = false; // We don't have regle info for primitives here
         }
         const key = `${sec}|${typeof desc === "object" ? JSON.stringify(desc) : desc}`;
         const found = latest[pcId]?.[key];
@@ -239,7 +243,7 @@ async function showGlobalView() {
           sec,
           desc,
           descText,
-          regle,
+          isUnres,
           when,
           whenStr,
         });
@@ -251,14 +255,14 @@ async function showGlobalView() {
   rows.sort((a, b) => b.when - a.when);
 
   // 3. Afficher
-  rows.forEach(({pcId, sec, desc, descText, regle, whenStr}) => {
+  rows.forEach(({pcId, sec, desc, descText, isUnres, whenStr}) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${pcId}</td>
       <td>${whenStr}</td>
       <td>${label(sec)}</td>
       <td>${descText}</td>
-      <td>${regle ? "✅" : "❌"}</td>
+      <td>${isUnres ? "❌" : "✅"}</td>
       <td>
         <button data-pc="${pcId}" data-sec="${sec}" data-desc="${encodeURIComponent(JSON.stringify(desc))}">
           Marquer réglé
@@ -283,7 +287,10 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
   if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
   const pcRef = doc(db, "computers", pc);
 
-  if (isHeadphoneDamage(desc)) {
+  if (section === "headphones" && isHeadphoneDamage(desc)) {
+    // For headphone damage objects, remove the object from array (no regle field)
+    await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+  } else if (isHeadphoneDamage(desc)) {
     // For headphone damage objects, update regle to true
     const pcSnap = await getDoc(pcRef);
     if (!pcSnap.exists()) return;
