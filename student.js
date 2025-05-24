@@ -1,6 +1,12 @@
 // Empêche la fermeture de la fenêtre tant que le formulaire n'a pas été envoyé, actif dès la première interaction
 let isSubmitted = false;
 let userHasInteracted = false;
+function activateBeforeUnload() {
+  if (!userHasInteracted) {
+    userHasInteracted = true;
+    window.addEventListener("beforeunload", blockUnload);
+  }
+}
 function blockUnload(e) {
   if (!isSubmitted) {
     e.preventDefault();
@@ -8,6 +14,15 @@ function blockUnload(e) {
     return "";
   }
 }
+
+// Active la protection seulement à l'affichage de la première vraie section
+// show(0) est déjà appelé plus bas, donc on ajoute les activateurs ici
+// (évite attachement multiple des listeners)
+// (voir plus bas pour show(0))
+// Ces listeners ne seront activés qu'une fois à la première interaction
+window.addEventListener("keydown", activateBeforeUnload, { once: true });
+window.addEventListener("mousedown", activateBeforeUnload, { once: true });
+window.addEventListener("touchstart", activateBeforeUnload, { once: true });
 
 // Change le titre si l'élève essaie d'aller ailleurs
 window.onblur = function() {
@@ -189,17 +204,6 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   function show(i){
     sections.forEach((s,idx)=>s.classList.toggle("hidden",idx!==i));
     updateProgressBar();
-    // Gestion dynamique du beforeunload : uniquement pour les sections AVANT "rules"
-    if (sections[i].id === "section-rules") {
-        window.removeEventListener("beforeunload", blockUnload);
-        window.onbeforeunload = null;
-    } else {
-        // attache si pas déjà présent
-        if (!isSubmitted && !userHasInteracted) {
-            userHasInteracted = true;
-            window.addEventListener("beforeunload", blockUnload, { once: true });
-        }
-    }
     if (sections[i].id === "section-headphones") {
       headphoneRadios.forEach(r => r.checked = false);
       headphoneDetails.classList.add("hidden");
@@ -300,11 +304,10 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   }
 
   async function sendReports(){
-      // Désactive définitivement la protection avant de quitter
+      // Marquer immédiatement la soumission pour désactiver beforeunload
       isSubmitted = true;
-      userHasInteracted = false;
       window.removeEventListener("beforeunload", blockUnload);
-      window.onbeforeunload = null;
+      window.onbeforeunload = null;               // supprime tout handler résiduel
 
       if (pendingReports.length === 0){
           // Ajoute un enregistrement unique contenant date & heure pour conserver chaque connexion
@@ -319,11 +322,9 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
       await addDoc(collection(db,"reports"), {
         pcId, user:userId, when: serverTimestamp(), items: pendingReports, resolved:false
       });
-      // Désactive définitivement la protection avant de quitter
       isSubmitted = true;
-      userHasInteracted = false;
       window.removeEventListener("beforeunload", blockUnload);
-      window.onbeforeunload = null;
+      window.onbeforeunload = null;               // supprime tout handler résiduel
       alert("Merci ! Tu peux fermer cette fenêtre.");
       window.close();
   }
@@ -331,11 +332,8 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   function previousSection(){
     if (current>0){
       current--;
-      // Réinitialiser le flag si on remonte avant "rules"
-      if (sections[current].id !== "section-rules" && !isSubmitted) {
-        userHasInteracted = false;   // autorise l’attachement à nouveau au retour
-      }
       show(current);
+
     }
   }
 
