@@ -85,6 +85,20 @@ const data = (await getDoc(pcRef)).data();
 /* ------ Gestion des boutons ------ */
 let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
 
+function haveRealDamage(){
+  return pendingReports.some(r=>{
+    if (r.section === "none") return false;
+    if (r.section === "headphones"){
+      // objet {numero, description:"aucun dégât"} OU string "aucun dégât"
+      if (typeof r.desc === "object"){
+        return (r.desc.description || "").toLowerCase().indexOf("aucun dégât") === -1;
+      }
+      return (r.desc || "").toLowerCase().indexOf("aucun dégât") === -1;
+    }
+    return true;          // tout autre section = vrai dégât
+  });
+}
+
 
   /* ------ Navigation de section ------ */
 
@@ -154,7 +168,7 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
     rulesFinish.onclick = async () => {
       // Si des dégâts ont été signalés (pendingReports contient autre chose que "none"),
       // on affiche la validation prof (mot de passe). Sinon on envoie directement.
-      if (pendingReports.length && !(pendingReports.length === 1 && pendingReports[0].section === "none")) {
+      if (haveRealDamage()) {
         newList.innerHTML = "";
         pendingReports.forEach(r => {
           const li = document.createElement("li");
@@ -279,7 +293,7 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
     if (current < sections.length){
       show(current);
     } else {
-        if (pendingReports.length && !(pendingReports.length===1 && pendingReports[0].section==="none")){
+        if (haveRealDamage()){
             // afficher la modale prof
             newList.innerHTML = "";
             pendingReports.forEach(r=>{
