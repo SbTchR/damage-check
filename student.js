@@ -264,6 +264,10 @@ let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
   }
 
   async function sendReports(){
+      // Marquer immédiatement la soumission pour désactiver beforeunload
+      isSubmitted = true;
+      window.removeEventListener("beforeunload", blockUnload);
+
       if (pendingReports.length === 0){
           // Ajoute un enregistrement unique contenant date & heure pour conserver chaque connexion
           const now    = new Date();
