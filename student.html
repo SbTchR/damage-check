@@ -242,7 +242,7 @@ h4 {
     <br>
     <i>🧑‍💻 Consigne :</i> <br>
     <ul>
-      <li>Signale honnêtement tout problème constaté (clavier, souris, écran, autres).</li>
+      <li>Signale honnêtement tout problème constaté (touche manquante, câble débranchlé, rayure, stylo, etc).</li>
       <li>Si tu déclares un nouveau dégât, l'enseignant devra le <span class="important-red">valider avec un mot de passe 🛡️</span> tout à la fin.</li>
     </ul>
     <br>
@@ -305,12 +305,31 @@ h4 {
   <button data-back>⏪︎ Précédent</button>
 </div>
 
+
 <div id="section-other"  class="section section-wide hidden">
   <h3>🛠️ Autres</h3>
   <div class="already-signaled-title">Dégâts déjà signalés :</div>
   <ul id="list-other"></ul>
   <button data-sec="other" data-nothing>Rien à signaler et terminer la vérification ✔︎</button>
   <button data-sec="other" data-new>Signaler un nouveau dégât</button>
+  <button data-back>⏪︎ Précédent</button>
+</div>
+
+<div id="section-rules" class="section section-wide hidden">
+  <h3>📜 Règles pour l’utilisation des ordinateurs</h3>
+  <ul>
+    <li>👤 Chaque élève utilise <strong>uniquement son poste</strong>. Interdit de toucher à l’ordinateur, au clavier ou à la souris d’un autre élève.</li>
+    <li>💻 Les portables s’utilisent <strong>à plat sur une table</strong>, jamais sur les genoux, et doivent être <strong>fermés</strong> quand on les déplace.</li>
+    <li>🖥️ Les écrans fixes ne doivent pas être déplacés ou tournés.</li>
+    <li>🚫🥤 <strong>Pas de nourriture ni de boissons</strong> dans la salle d’informatique.</li>
+    <li>⚙️ Aucun <strong>téléchargement</strong> ni <strong>installation</strong> de logiciel n’est autorisé.</li>
+    <li>🌐 Internet doit être utilisé <strong>de manière appropriée</strong> pour un usage scolaire.</li>
+    <li>📚 De manière générale, il n’est pas permis de faire autre chose que ce qui a été demandé par l’enseignant.</li>
+  </ul>
+  <label style="display:block; margin-top:1.2em; font-weight:600;">
+    <input type="checkbox" id="rulesAgree" /> ✅ J’accepte ces règles et comprends que je m’expose à des sanctions si j’y contreviens.
+  </label>
+  <button id="rulesFinish" class="hidden" style="margin-top:1.5em;">Terminer ✔︎</button>
   <button data-back>⏪︎ Précédent</button>
 </div>
 
