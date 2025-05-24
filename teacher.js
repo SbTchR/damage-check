@@ -154,13 +154,19 @@ tbody.addEventListener("click", async ev=>{
 
   if (action === "delete") {
     if (!window.confirm("Supprimer définitivement ce dégât ?")) return;
+    const pcSnap = await getDoc(pcRef);
+    if (!pcSnap.exists()) return;
+    const data = pcSnap.data() ?? {};
+    const arr = Array.isArray(data[section]) ? data[section] : [];
+    let newArr;
     if (section === "headphones" && isHeadphoneDamage(desc)) {
-      await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+      newArr = arr.filter(d => !headphoneDamageEquals(d, desc));
     } else {
-      await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+      newArr = arr.filter(d => d !== desc);
     }
-    // remove row from UI immediately
+    await setDoc(pcRef, { [section]: newArr }, { merge: true });
     ev.target.closest("tr")?.remove();
+    if (globalTbody) showGlobalView();
     return; // done
   }
 
@@ -309,16 +315,23 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
   } catch {
     desc = descRaw;
   }
+  const pcRef = doc(db, "computers", pc);
+
   if (action === "delete") {
     if (!window.confirm("Supprimer définitivement ce dégât ?")) return;
-    const pcRef = doc(db, "computers", pc);
+    const pcSnap = await getDoc(pcRef);
+    if (!pcSnap.exists()) return;
+    const data = pcSnap.data() ?? {};
+    const arr = Array.isArray(data[section]) ? data[section] : [];
+    let newArr;
     if (section === "headphones" && isHeadphoneDamage(desc)) {
-      await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+      newArr = arr.filter(d => !headphoneDamageEquals(d, desc));
     } else {
-      await updateDoc(pcRef, { [section]: arrayRemove(desc) });
+      newArr = arr.filter(d => d !== desc);
     }
+    await setDoc(pcRef, { [section]: newArr }, { merge: true });
     ev.target.closest("tr")?.remove();
-    showGlobalView();
+    if (globalTbody) showGlobalView();
     return; // done
   }
   if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
