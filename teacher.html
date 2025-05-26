@@ -48,6 +48,7 @@
 <div id="headphoneView" style="display:none; padding:1em 0;">
   <label for="filterHeadphone">🔍 Filtrer par n° écouteurs :</label>
   <input type="text" id="filterHeadphone" placeholder="Ex : 5" style="margin-left:0.5em; max-width:80px;" />
+  <button id="filterHeadphoneBtn" style="margin-left:0.5em;">Valider</button>
   <table style="width:100%; margin-top:0.8em;">
     <thead>
       <tr>
@@ -64,73 +65,4 @@
 
 <script type="module" src="teacher.js"></script>
 
-<script>
-  const dash = document.getElementById("dash");
-  const globalView = document.getElementById("globalView");
-  const tabPc = document.getElementById("tabPc");
-  const tabGlobal = document.getElementById("tabGlobal");
-  const tabHeadphones = document.getElementById("tabHeadphones");
-  const headphoneView = document.getElementById("headphoneView");
-  const filterHeadphone = document.getElementById("filterHeadphone");
-  const headphoneTbody = document.getElementById("headphoneTbody");
-
-  function showPcView(){
-    dash.style.display = "";
-    globalView.style.display = "none";
-    headphoneView.style.display = "none";
-    window.location.hash = "";
-  }
-  function showGlobalViewTab(){
-    dash.style.display = "none";
-    globalView.style.display = "";
-    headphoneView.style.display = "none";
-    window.location.hash = "#global";
-    if (window.showGlobalView) window.showGlobalView();
-  }
-  async function showHeadphonesView(){
-    dash.style.display = "none";
-    globalView.style.display = "none";
-    headphoneView.style.display = "";
-    window.location.hash = "#headphones";
-    // Fetch all reports
-    headphoneTbody.innerHTML = "";
-    const q = query(collection(db,"reports"));
-    const snapshot = await getDocs(q);
-    snapshot.forEach(docSnap => {
-      const rep = docSnap.data();
-      const items = Array.isArray(rep.items) ? rep.items : [];
-      items.forEach(item => {
-        if(item.section === "headphones"){
-          const descObj = typeof item.desc === "object" ? item.desc : JSON.parse(item.desc);
-          const tr = document.createElement("tr");
-          tr.dataset.num = String(descObj.numero).trim();
-          tr.innerHTML = `
-            <td>${rep.pcId || ""}</td>
-            <td>${new Date(rep.when).toLocaleString()}</td>
-            <td>${rep.user || ""}</td>
-            <td>${descObj.numero}</td>
-            <td>${descObj.description}</td>
-          `;
-          headphoneTbody.appendChild(tr);
-        }
-      });
-    });
-  }
-
-  filterHeadphone.oninput = () => {
-    const filter = filterHeadphone.value.trim();
-    Array.from(headphoneTbody.children).forEach(tr => {
-      const num = tr.dataset.num;
-      tr.style.display = filter === "" || num.includes(filter) ? "" : "none";
-    });
-  };
-
-  tabPc.onclick = showPcView;
-  tabGlobal.onclick = showGlobalViewTab;
-  tabHeadphones.onclick = showHeadphonesView;
-
-  // Si #global dans l’URL, active d’office la vue d’ensemble
-  if(window.location.hash==="#global") showGlobalViewTab();
-  else if(window.location.hash==="#headphones") showHeadphonesView();
-</script>
 </body></html>

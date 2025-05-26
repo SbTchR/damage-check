@@ -6,6 +6,39 @@ import {
   setDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+
+// Headphones view elements
+const tabHeadphones      = document.getElementById("tabHeadphones");
+const headphoneView      = document.getElementById("headphoneView");
+const filterHeadphone    = document.getElementById("filterHeadphone");
+const filterHeadphoneBtn = document.getElementById("filterHeadphoneBtn");
+const headphoneTbody     = document.getElementById("headphoneTbody");
+
+// Main view elements and tab handling
+const dash = document.getElementById("dash");
+const globalView = document.getElementById("globalView");
+const tabPc = document.getElementById("tabPc");
+const tabGlobal = document.getElementById("tabGlobal");
+
+function showPcView() {
+  dash.style.display = "";
+  globalView.style.display = "none";
+  headphoneView.style.display = "none";
+  window.location.hash = "";
+}
+function showGlobalViewTab() {
+  dash.style.display = "none";
+  globalView.style.display = "";
+  headphoneView.style.display = "none";
+  window.location.hash = "#global";
+  if (window.showGlobalView) window.showGlobalView();
+}
+
+// Wire up the main tabs
+tabPc.onclick = showPcView;
+tabGlobal.onclick = showGlobalViewTab;
+tabHeadphones.onclick = showHeadphonesView;
+
 let currentPC   = "01";
 let unresolved  = {keyboard:[],mouse:[],screen:[],headphones:[],other:[]};
 let reportCache = []; // array of {when,user,items}
@@ -342,6 +375,51 @@ async function showGlobalView() {
 
 }
 
+// ----- VUE ÉCOUTEURS -----
+async function showHeadphonesView() {
+  // Hide other views
+  dash.style.display       = "none";
+  globalView.style.display = "none";
+  headphoneView.style.display = "";
+
+  window.location.hash = "#headphones";
+
+  // Populate headphones table
+  headphoneTbody.innerHTML = "";
+  const reportsSnap = await getDocs(collection(db, "reports"));
+  reportsSnap.forEach(ds => {
+    const rep = ds.data();
+    const items = Array.isArray(rep.items) ? rep.items : [];
+    items.forEach(item => {
+      if (item.section === "headphones") {
+        let descObj = item.desc;
+        if (typeof descObj === "string") {
+          try { descObj = JSON.parse(descObj); } catch {}
+        }
+        const tr = document.createElement("tr");
+        tr.dataset.num = String(descObj.numero).trim();
+        const whenStr = rep.when ? new Date(rep.when.seconds * 1000).toLocaleString() : "";
+        tr.innerHTML = `
+          <td>${rep.pcId || ""}</td>
+          <td>${whenStr}</td>
+          <td>${rep.user || ""}</td>
+          <td>${descObj.numero}</td>
+          <td>${descObj.description}</td>
+        `;
+        headphoneTbody.appendChild(tr);
+      }
+    });
+  });
+}
+
+// Filter functionality for headphones
+filterHeadphoneBtn.onclick = () => {
+  const filter = filterHeadphone.value.trim();
+  Array.from(headphoneTbody.children).forEach(tr => {
+    tr.style.display = (!filter || tr.dataset.num.includes(filter)) ? "" : "none";
+  });
+};
+
 document.getElementById("globalTbody").addEventListener("click", async ev => {
   if (ev.target.tagName !== "BUTTON") return;
   const action  = ev.target.dataset.action || "toggle";
@@ -428,3 +506,12 @@ document.getElementById("globalTbody").addEventListener("click", async ev => {
 
 // Expose la fonction globalement pour l'utiliser via des attributs HTML
 window.showGlobalView = showGlobalView;
+
+// Load appropriate view on page load based on URL hash
+if (window.location.hash === "#global") {
+  showGlobalViewTab();
+} else if (window.location.hash === "#headphones") {
+  showHeadphonesView();
+} else {
+  showPcView();
+}
