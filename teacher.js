@@ -386,6 +386,7 @@ async function showHeadphonesView() {
 
   // Populate headphones table
   headphoneTbody.innerHTML = "";
+  const seen = new Set();
   const reportsSnap = await getDocs(collection(db, "reports"));
   reportsSnap.forEach(ds => {
     const rep = ds.data();
@@ -396,6 +397,9 @@ async function showHeadphonesView() {
         if (typeof descObj === "string") {
           try { descObj = JSON.parse(descObj); } catch {}
         }
+        const key = `${descObj.numero}|${normalizeText(descObj.description)}`;
+        if (seen.has(key)) return;
+        seen.add(key);
         const tr = document.createElement("tr");
         tr.dataset.num = String(descObj.numero).trim();
         const whenStr = rep.when ? new Date(rep.when.seconds * 1000).toLocaleString() : "";
