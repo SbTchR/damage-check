@@ -74,8 +74,9 @@ if (!pcSnap.exists()) {
 }
 
 const data = (await getDoc(pcRef)).data();
+const headphoneExistingWrapper = document.getElementById("headphones-existing");
 const headphoneDamageList = document.getElementById("list-headphones");
-if (headphoneDamageList) headphoneDamageList.classList.add("hidden");
+if (headphoneExistingWrapper) headphoneExistingWrapper.classList.add("hidden");
 
 const headphoneInitial = Array.isArray(data.headphones) ? data.headphones : [];
 ["keyboard","mouse","screen","other"].forEach(sec=>{
@@ -130,14 +131,14 @@ function addHeadphoneDamageToMap(numero, description){
 }
 
 function renderHeadphoneDamageList(numero){
-  if (!headphoneDamageList) return;
+  if (!headphoneDamageList || !headphoneExistingWrapper) return;
   headphoneDamageList.innerHTML = "";
   const num = numero.trim();
   if (!num) {
-    headphoneDamageList.classList.add("hidden");
+    headphoneExistingWrapper.classList.add("hidden");
     return;
   }
-  headphoneDamageList.classList.remove("hidden");
+  headphoneExistingWrapper.classList.remove("hidden");
   const list = headphoneDamageMap.get(num) || [];
   if (list.length === 0) {
     const li = document.createElement("li");
