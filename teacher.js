@@ -263,7 +263,7 @@ async function drawTable() {
     return;
   }
 
-  pcEmpty?.textContent = "Aucun signalement pour ce poste.";
+  if (pcEmpty) pcEmpty.textContent = "Aucun signalement pour ce poste.";
   pcEmpty?.classList.add("hidden");
 
   const latestMap = new Map();
@@ -379,7 +379,7 @@ async function drawTable() {
 async function drawHeadphoneDetail(numero) {
   if (!tbody) return;
   tbody.innerHTML = "";
-  pcEmpty?.textContent = "Aucun dégât pour cet écouteur.";
+  if (pcEmpty) pcEmpty.textContent = "Aucun dégât pour cet écouteur.";
   pcEmpty?.classList.add("hidden");
 
   const { numbers, cards } = await fetchHeadphoneIssues();
