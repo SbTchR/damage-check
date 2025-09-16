@@ -383,7 +383,18 @@ function haveRealDamage(){
           const hpObj = { numero: num, description: txt };
           desc = `N°${hpObj.numero} : ${hpObj.description}`;
           pendingReports.push({ section: sec, desc: hpObj });
-          await updateDoc(pcRef, { [sec]: arrayUnion({ numero: num, description: txt }) });
+          const docSnap = await getDoc(pcRef);
+          const currentArr = Array.isArray(docSnap.data()?.[sec]) ? docSnap.data()[sec] : [];
+          let exists = currentArr.some(item => {
+            if (item && typeof item === "object") {
+              return String(item.numero || "").trim() === num &&
+                     (item.description || item.desc || "") === txt;
+            }
+            return false;
+          });
+          if (!exists) {
+            await updateDoc(pcRef, { [sec]: arrayUnion({ numero: num, description: txt }) });
+          }
           addHeadphoneDamageToMap(num, txt);
           renderHeadphoneDamageList(num);
         } else {
