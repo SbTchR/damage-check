@@ -42,7 +42,11 @@ function randomAttentionEmoji(){
   return attentionEmojis[Math.floor(Math.random()*attentionEmojis.length)];
 }
 
-let headphoneDamageMap = new Map();
+const headphoneDamageMap = new Map(); // { numero -> Map(normalizedText, {text, raw}) }
+
+function normalizeDamageText(value){
+  return String(value ?? "").trim().toLowerCase();
+}
 
 /* ------ Paramètres URL ------ */
 const params = new URLSearchParams(location.search);
@@ -102,7 +106,7 @@ const headphoneInitial = Array.isArray(data.headphones) ? data.headphones : [];
 });
 
 async function loadHeadphoneDamages(){
-  headphoneDamageMap = new Map();
+  headphoneDamageMap.clear();
   try {
     const snaps = await getDocs(collection(db, "computers"));
     snaps.forEach(docSnap => {
@@ -121,8 +125,15 @@ function addHeadphoneDamageToMapRaw(item){
   const num = String(obj.numero || "").trim();
   if (!num) return;
   const text = obj.text || obj.description || obj.desc || String(item ?? "");
-  if (!headphoneDamageMap.has(num)) headphoneDamageMap.set(num, []);
-  headphoneDamageMap.get(num).push({ text, raw: obj });
+  const key = normalizeDamageText(text);
+  let inner = headphoneDamageMap.get(num);
+  if (!inner) {
+    inner = new Map();
+    headphoneDamageMap.set(num, inner);
+  }
+  if (!inner.has(key)) {
+    inner.set(key, { text, raw: obj });
+  }
 }
 
 function addHeadphoneDamageToMap(numero, description){
@@ -139,14 +150,14 @@ function renderHeadphoneDamageList(numero){
     return;
   }
   headphoneExistingWrapper.classList.remove("hidden");
-  const list = headphoneDamageMap.get(num) || [];
-  if (list.length === 0) {
+  const inner = headphoneDamageMap.get(num);
+  if (!inner || inner.size === 0) {
     const li = document.createElement("li");
     li.textContent = "Aucun dégât signalé pour cette paire.";
     headphoneDamageList.appendChild(li);
     return;
   }
-  list.forEach(entry => {
+  inner.forEach(entry => {
     const li = document.createElement("li");
     const wrapper = document.createElement("span");
     const bullet = document.createElement("span");
