@@ -378,8 +378,13 @@ label {
   gap: 0.85rem;
   align-items: center;
 }
-.headphone-actions input {
+.headphone-actions input,
+.headphone-actions select {
   flex: 0 0 auto;
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(20, 95, 200, 0.25);
+  background: rgba(255,255,255,0.95);
 }
 #btnNoHeadphone {
   margin-top: 0.6rem;
@@ -694,14 +699,14 @@ label {
     </div>
 
     <div id="headphone-details" class="hidden">
-      <label for="headphoneNumber">
-        Numéro de la paire d'écouteurs :
-      </label>
-      <div class="headphone-actions">
-        <input type="text" id="headphoneNumber" placeholder="Ex : 17" />
-        <button id="newHeadphoneDamage">Signaler un nouveau dégât</button>
-        <button id="noHeadphoneDamage">Aucun dégât ✔︎</button>
-      </div>
+    <label for="headphoneNumber">
+      Numéro de la paire d'écouteurs :
+    </label>
+    <div class="headphone-actions">
+      <select id="headphoneNumber"></select>
+      <button id="newHeadphoneDamage">Signaler un nouveau dégât</button>
+      <button id="noHeadphoneDamage">Aucun dégât ✔︎</button>
+    </div>
     </div>
     <button id="btnNoHeadphone" class="hidden">Rien à signaler ⏩︎</button>
     <button data-back>⏪︎ Précédent</button>

@@ -219,9 +219,26 @@ function haveRealDamage(){
   }
 
   if (headphoneNumber) {
-    headphoneNumber.addEventListener("input", () => {
-      renderHeadphoneDamageList(headphoneNumber.value.trim());
-    });
+    if (headphoneNumber.tagName === "SELECT") {
+      headphoneNumber.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Sélectionner...";
+      headphoneNumber.appendChild(placeholder);
+      for (let i = 1; i <= 30; i++) {
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = String(i);
+        headphoneNumber.appendChild(opt);
+      }
+      headphoneNumber.addEventListener("change", () => {
+        renderHeadphoneDamageList(headphoneNumber.value.trim());
+      });
+    } else {
+      headphoneNumber.addEventListener("input", () => {
+        renderHeadphoneDamageList(headphoneNumber.value.trim());
+      });
+    }
   }
 
   if (newHeadphoneDamage) {
@@ -238,6 +255,7 @@ function haveRealDamage(){
       // On enregistre la simple utilisation sans dégât
       pendingReports.push({ section:"headphones", desc:{ numero:num, description:"aucun dégât" }});
       // On passe à la section suivante SANS toucher à computers/headphones
+      if (headphoneNumber.tagName === "SELECT") headphoneNumber.value = "";
       renderHeadphoneDamageList("");
       nextSection();
     };
