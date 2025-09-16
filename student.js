@@ -34,13 +34,15 @@ window.onfocus = function() {
 // student.js
 import { db } from "./firebase-config.js";
 import {
-  doc, getDoc, setDoc, updateDoc, arrayUnion, addDoc, collection, serverTimestamp
+  doc, getDoc, getDocs, setDoc, updateDoc, arrayUnion, addDoc, collection, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const attentionEmojis = ["🧚‍♂️","🧜‍♀️","🏄‍♂️","👀","🐷","🔎","🦊","💥","✨","🐔","🦄","🍓","🍿","🍤","🏖️","🪂","🧙"];
 function randomAttentionEmoji(){
   return attentionEmojis[Math.floor(Math.random()*attentionEmojis.length)];
 }
+
+let headphoneDamageMap = new Map();
 
 /* ------ Paramètres URL ------ */
 const params = new URLSearchParams(location.search);
@@ -72,7 +74,11 @@ if (!pcSnap.exists()) {
 }
 
 const data = (await getDoc(pcRef)).data();
-["keyboard","mouse","screen","headphones","other"].forEach(sec=>{
+const headphoneDamageList = document.getElementById("list-headphones");
+if (headphoneDamageList) headphoneDamageList.classList.add("hidden");
+
+const headphoneInitial = Array.isArray(data.headphones) ? data.headphones : [];
+["keyboard","mouse","screen","other"].forEach(sec=>{
   const ul = document.getElementById(`list-${sec}`);
   if (!ul || !data[sec]) return;
   data[sec].forEach(d => {
@@ -82,22 +88,79 @@ const data = (await getDoc(pcRef)).data();
     bullet.className = "damage-bullet";
     bullet.textContent = randomAttentionEmoji();
     const textSpan = document.createElement("span");
-
-    if (sec === "headphones" && typeof d === "object" && d !== null) {
-      const label = d.description || d.desc || "";
-      textSpan.textContent = `N°${d.numero || "?"} : ${label}`;
-    } else if (typeof d === "object" && d !== null) {
+    if (typeof d === "object" && d !== null) {
       textSpan.textContent = d.text || d.description || d.desc || JSON.stringify(d);
     } else {
       textSpan.textContent = d;
     }
-
     wrapper.appendChild(bullet);
     wrapper.appendChild(textSpan);
     li.appendChild(wrapper);
     ul.appendChild(li);
   });
 });
+
+async function loadHeadphoneDamages(){
+  headphoneDamageMap = new Map();
+  try {
+    const snaps = await getDocs(collection(db, "computers"));
+    snaps.forEach(docSnap => {
+      const arr = Array.isArray(docSnap.data()?.headphones) ? docSnap.data().headphones : [];
+      arr.forEach(item => addHeadphoneDamageToMapRaw(item));
+    });
+  } catch (err) {
+    console.error("loadHeadphoneDamages", err);
+  }
+
+  headphoneInitial.forEach(item => addHeadphoneDamageToMapRaw(item));
+}
+
+function addHeadphoneDamageToMapRaw(item){
+  const obj = item && typeof item === "object" ? item : { numero: "", description: String(item ?? "") };
+  const num = String(obj.numero || "").trim();
+  if (!num) return;
+  const text = obj.text || obj.description || obj.desc || String(item ?? "");
+  if (!headphoneDamageMap.has(num)) headphoneDamageMap.set(num, []);
+  headphoneDamageMap.get(num).push({ text, raw: obj });
+}
+
+function addHeadphoneDamageToMap(numero, description){
+  const obj = { numero, description };
+  addHeadphoneDamageToMapRaw(obj);
+}
+
+function renderHeadphoneDamageList(numero){
+  if (!headphoneDamageList) return;
+  headphoneDamageList.innerHTML = "";
+  const num = numero.trim();
+  if (!num) {
+    headphoneDamageList.classList.add("hidden");
+    return;
+  }
+  headphoneDamageList.classList.remove("hidden");
+  const list = headphoneDamageMap.get(num) || [];
+  if (list.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "Aucun dégât signalé pour cette paire.";
+    headphoneDamageList.appendChild(li);
+    return;
+  }
+  list.forEach(entry => {
+    const li = document.createElement("li");
+    const wrapper = document.createElement("span");
+    const bullet = document.createElement("span");
+    bullet.className = "damage-bullet";
+    bullet.textContent = randomAttentionEmoji();
+    const textSpan = document.createElement("span");
+    textSpan.textContent = entry.text;
+    wrapper.appendChild(bullet);
+    wrapper.appendChild(textSpan);
+    li.appendChild(wrapper);
+    headphoneDamageList.appendChild(li);
+  });
+}
+
+await loadHeadphoneDamages();
 
 /* ------ Gestion des boutons ------ */
 let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
@@ -143,13 +206,21 @@ function haveRealDamage(){
         if (radio.value === "oui" && radio.checked) {
           headphoneDetails.classList.remove("hidden");
           btnNoHeadphone.classList.add("hidden");
+          renderHeadphoneDamageList(headphoneNumber.value.trim());
         } else if (radio.value === "non" && radio.checked) {
           headphoneDetails.classList.add("hidden");
           btnNoHeadphone.classList.remove("hidden");
+          renderHeadphoneDamageList("");
         }
       };
     });
     btnNoHeadphone.onclick = nextSection;
+  }
+
+  if (headphoneNumber) {
+    headphoneNumber.addEventListener("input", () => {
+      renderHeadphoneDamageList(headphoneNumber.value.trim());
+    });
   }
 
   if (newHeadphoneDamage) {
@@ -166,6 +237,7 @@ function haveRealDamage(){
       // On enregistre la simple utilisation sans dégât
       pendingReports.push({ section:"headphones", desc:{ numero:num, description:"aucun dégât" }});
       // On passe à la section suivante SANS toucher à computers/headphones
+      renderHeadphoneDamageList("");
       nextSection();
     };
   }
@@ -293,6 +365,8 @@ function haveRealDamage(){
           desc = `N°${hpObj.numero} : ${hpObj.description}`;
           pendingReports.push({ section: sec, desc: hpObj });
           await updateDoc(pcRef, { [sec]: arrayUnion({ numero: num, description: txt }) });
+          addHeadphoneDamageToMap(num, txt);
+          renderHeadphoneDamageList(num);
         } else {
           pendingReports.push({ section:sec, desc:txt });
           await updateDoc(pcRef, { [sec]: arrayUnion(txt) });
