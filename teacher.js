@@ -89,6 +89,59 @@ function headphoneDamageEquals(a, b) {
          normalizeText(a.numero)      === normalizeText(b.numero);
 }
 
+function extractDamageText(section, val) {
+  if (section === "headphones") {
+    if (typeof val === "object" && val) {
+      return val.description ?? val.desc ?? "";
+    }
+    return String(val ?? "");
+  }
+  if (typeof val === "object" && val) {
+    if (typeof val.text === "string") return val.text;
+    if (typeof val.description === "string") return val.description;
+    if (typeof val.desc === "string") return val.desc;
+  }
+  return String(val ?? "");
+}
+
+function isNotImportantDamage(section, val) {
+  if (section === "headphones") {
+    return !!(val && typeof val === "object" && val.notImportant);
+  }
+  return !!(val && typeof val === "object" && val.notImportant);
+}
+
+function toHeadphoneObj(val) {
+  if (typeof val === "object" && val) return { ...val };
+  return { numero: "", description: String(val ?? "") };
+}
+
+function matchesDamage(section, stored, target) {
+  if (section === "headphones") {
+    return headphoneDamageEquals(toHeadphoneObj(stored), toHeadphoneObj(target));
+  }
+  return normalizeText(extractDamageText(section, stored)) === normalizeText(extractDamageText(section, target));
+}
+
+function makeNotImportantValue(section, stored, target) {
+  if (section === "headphones") {
+    const base = toHeadphoneObj(stored ?? target ?? {});
+    base.notImportant = true;
+    return base;
+  }
+  const text = extractDamageText(section, stored ?? target ?? "");
+  return { text, notImportant: true };
+}
+
+function makeImportantValue(section, stored, target) {
+  if (section === "headphones") {
+    const base = toHeadphoneObj(stored ?? target ?? {});
+    delete base.notImportant;
+    return base;
+  }
+  return extractDamageText(section, stored ?? target ?? "");
+}
+
 const SECTION_ORDER = ["keyboard","mouse","screen","headphones","other","none"];
 
 function comparePcIds(a, b) {
@@ -107,13 +160,8 @@ function keyForDamage(section, desc) {
   if (section === "headphones" && isHeadphoneDamage(desc)) {
     return `${section}|${normalizeText(desc.numero)}|${normalizeText(desc.description ?? desc.desc ?? "")}`;
   }
-  if (typeof desc === "string") {
-    return `${section}|${normalizeText(desc)}`;
-  }
-  if (desc && typeof desc === "object") {
-    return `${section}|${JSON.stringify(desc)}`;
-  }
-  return null;
+  const text = extractDamageText(section, desc);
+  return `${section}|${normalizeText(text)}`;
 }
 
 function formatDesc(section, desc) {
@@ -122,10 +170,7 @@ function formatDesc(section, desc) {
     const text = desc.description ?? desc.desc ?? "";
     return `#${numero} – ${text}`;
   }
-  if (typeof desc === "object" && desc !== null) {
-    return desc.description ?? desc.desc ?? JSON.stringify(desc);
-  }
-  return String(desc ?? "");
+  return extractDamageText(section, desc);
 }
 
 function isNothingDamage(section, desc) {
@@ -134,6 +179,10 @@ function isNothingDamage(section, desc) {
   }
   if (typeof desc === "string") {
     return normalizeText(desc) === "rien";
+  }
+  if (desc && typeof desc === "object") {
+    const text = desc.text ?? desc.description ?? desc.desc ?? "";
+    return normalizeText(text) === "rien";
   }
   return false;
 }
@@ -149,7 +198,7 @@ async function removeFromReport(repId, section, desc){
   if (section==="headphones" && isHeadphoneDamage(desc)){
     newItems = items.filter(it=> !(it.section===section && headphoneDamageEquals(it.desc, desc)));
   }else{
-    newItems = items.filter(it=> !(it.section===section && normalizeText(it.desc)===normalizeText(desc)));
+    newItems = items.filter(it=> !(it.section===section && matchesDamage(section, it.desc, desc)));
   }
   if (newItems.length){
     await setDoc(repRef,{items:newItems},{merge:true});
@@ -309,19 +358,20 @@ async function drawTable() {
   allKeys.forEach(key => {
     const base = latestMap.get(key);
     const section = base?.section || key.split("|")[0] || "other";
-    const desc = base?.desc ?? unresolvedMap.get(key);
-    if (desc === undefined) return;
+    const value = unresolvedMap.get(key) ?? base?.desc;
+    if (value === undefined) return;
     const isUnres = unresolvedMap.has(key);
     if (onlyUnresToggleEl?.checked && !isUnres) return;
     rows.push({
       section,
-      desc,
-      descText: formatDesc(section, desc),
+      desc: value,
+      descText: section === "headphones" ? formatDesc(section, value) : extractDamageText(section, value),
       whenStr: base?.whenStr || "",
       whenTs: base?.whenTs || 0,
       user: base?.user || "",
       isUnres,
-      reportId: base?.reportId || ""
+      reportId: base?.reportId || "",
+      isNotImportant: isNotImportantDamage(section, value)
     });
   });
 
@@ -340,32 +390,48 @@ async function drawTable() {
       heading.innerHTML = `<td colspan="6">${label(row.section)}</td>`;
       tbody.appendChild(heading);
     }
-    const statusClass = row.isUnres ? "danger" : "success";
-    const statusLabel = row.isUnres ? "❌ Non réglé" : "✅ Réglé";
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${label(row.section)}</td>
-        <td>${row.descText}</td>
-        <td>${row.whenStr}</td>
-        <td>${row.user}</td>
-        <td><span class="tag-status ${statusClass}">${statusLabel}</span></td>
-        <td>
-          <div class="action-group">
-            <button data-action="toggle"
-                    data-pc="${currentPC}"
-                    data-rep="${row.reportId}"
-                    data-sec="${row.section}"
-                    data-desc="${encodeURIComponent(JSON.stringify(row.desc))}"
-                    data-res="${row.isUnres}">
-              ${row.isUnres ? "Marquer réglé" : "Marquer non réglé"}
-            </button>
-            <button data-action="delete"
-                    data-pc="${currentPC}"
-                    data-rep="${row.reportId}"
-                    data-sec="${row.section}"
-                    data-desc="${encodeURIComponent(JSON.stringify(row.desc))}">
-              Supprimer
-            </button>
+    let statusClass = "success";
+    let statusLabel = "✅ Réglé";
+    if (row.isUnres) {
+      statusClass = row.isNotImportant ? "neutral" : "danger";
+      statusLabel = row.isNotImportant ? "⚪ Pas important" : "❌ Non réglé";
+    }
+    const tr = document.createElement("tr");
+    if (row.isNotImportant) {
+      tr.classList.add("not-important");
+    } else if (row.isUnres) {
+      tr.classList.add("needs-attention");
+    }
+    tr.innerHTML = `
+      <td>${label(row.section)}</td>
+      <td>${row.descText}</td>
+      <td>${row.whenStr}</td>
+      <td>${row.user}</td>
+      <td><span class="tag-status ${statusClass}">${statusLabel}</span></td>
+      <td>
+        <div class="action-group">
+          <button data-action="toggle"
+                  data-pc="${currentPC}"
+                  data-rep="${row.reportId}"
+                  data-sec="${row.section}"
+                  data-desc="${encodeURIComponent(JSON.stringify(row.desc))}"
+                  data-res="${row.isUnres}">
+            ${row.isUnres ? "Marquer réglé" : "Marquer non réglé"}
+          </button>
+          <button data-action="not-important"
+                  data-pc="${currentPC}"
+                  data-sec="${row.section}"
+                  data-desc="${encodeURIComponent(JSON.stringify(row.desc))}"
+                  data-ni="${row.isNotImportant}">
+            ${row.isNotImportant ? "Important" : "Pas important"}
+          </button>
+          <button data-action="delete"
+                  data-pc="${currentPC}"
+                  data-rep="${row.reportId}"
+                  data-sec="${row.section}"
+                  data-desc="${encodeURIComponent(JSON.stringify(row.desc))}">
+            Supprimer
+          </button>
         </div>
       </td>`;
     tbody.appendChild(tr);
@@ -394,7 +460,7 @@ async function drawHeadphoneDetail(numero) {
   const rows = [];
   card.items.forEach(item => {
     if (onlyDamages?.checked && isNothingDamage("headphones", item.desc)) return;
-    rows.push(item);
+    rows.push({ ...item, isNotImportant: isNotImportantDamage("headphones", item.desc) });
   });
 
   if (!rows.length) {
@@ -405,6 +471,7 @@ async function drawHeadphoneDetail(numero) {
   rows.sort((a, b) => b.whenTs - a.whenTs);
   rows.forEach(item => {
     const tr = document.createElement("tr");
+    tr.classList.add(item.isNotImportant ? "not-important" : "needs-attention");
     const compTd = document.createElement("td");
     compTd.textContent = label("headphones");
     const descTd = document.createElement("td");
@@ -418,8 +485,8 @@ async function drawHeadphoneDetail(numero) {
     userTd.textContent = item.user || "";
     const statusTd = document.createElement("td");
     const statusSpan = document.createElement("span");
-    statusSpan.className = "tag-status danger";
-    statusSpan.textContent = "❌ Non réglé";
+    statusSpan.className = "tag-status " + (item.isNotImportant ? "neutral" : "danger");
+    statusSpan.textContent = item.isNotImportant ? "⚪ Pas important" : "❌ Non réglé";
     statusTd.appendChild(statusSpan);
     const actionTd = document.createElement("td");
     const actionGroup = document.createElement("div");
@@ -432,6 +499,14 @@ async function drawHeadphoneDetail(numero) {
               data-rep="${item.reportId}"
               data-res="true">
         Marquer réglé
+      </button>
+      <button data-action="not-important"
+              data-pc="${item.pcId}"
+              data-sec="headphones"
+              data-desc="${encodeURIComponent(JSON.stringify(item.desc))}"
+              data-rep="${item.reportId}"
+              data-ni="${item.isNotImportant}">
+        ${item.isNotImportant ? "Important" : "Pas important"}
       </button>
       <button data-action="delete"
               data-pc="${item.pcId}"
@@ -479,7 +554,7 @@ tbody.addEventListener("click", async ev=>{
     if (section === "headphones" && isHeadphoneDamage(desc)) {
       newArr = arr.filter(d => !headphoneDamageEquals(d, desc));
     } else {
-      newArr = arr.filter(d => normalizeText(d) !== normalizeText(desc));
+      newArr = arr.filter(d => !matchesDamage(section, d, desc));
     }
     await setDoc(pcRef, { [section]: newArr }, { merge: true });
     const repId = btn.dataset.rep;
@@ -491,6 +566,14 @@ tbody.addEventListener("click", async ev=>{
     if (headphoneGrid) renderHeadphones();
     if (currentHeadphoneDetail) await drawTable();
     return; // done
+  }
+
+  if (action === "not-important") {
+    await markNotImportant(targetPc, section, desc, btn.dataset.ni !== "true");
+    if (globalGrid) showGlobalView();
+    if (headphoneGrid) renderHeadphones();
+    await drawTable();
+    return;
   }
 
   if (section === "headphones" && isHeadphoneDamage(desc)) {
@@ -527,6 +610,26 @@ tbody.addEventListener("click", async ev=>{
   if (headphoneGrid) renderHeadphones();
   if (currentHeadphoneDetail) await drawTable();
 });
+
+async function markNotImportant(pc, section, desc, shouldBeNotImportant) {
+  const pcRef = doc(db, "computers", pc);
+  const snap = await getDoc(pcRef);
+  if (!snap.exists()) return;
+  const data = snap.data() ?? {};
+  const arr = Array.isArray(data[section]) ? data[section] : [];
+  let modified = false;
+  const newArr = arr.map(item => {
+    if (matchesDamage(section, item, desc)) {
+      modified = true;
+      return shouldBeNotImportant ? makeNotImportantValue(section, item, desc)
+                                  : makeImportantValue(section, item, desc);
+    }
+    return item;
+  });
+
+  if (!modified) return;
+  await setDoc(pcRef, { [section]: newArr }, { merge: true });
+}
 
 function label(sec){
   const map = {
@@ -596,10 +699,11 @@ async function showGlobalView() {
         issues.push({
           section,
           desc,
-          descText: formatDesc(section, desc),
+          descText: section === "headphones" ? formatDesc(section, desc) : extractDamageText(section, desc),
           tooltip: `${reporter}${datePart}`,
           reportId: latest?.reportId || "",
-          whenTs: latest?.whenTs || 0
+          whenTs: latest?.whenTs || 0,
+          isNotImportant: isNotImportantDamage(section, desc)
         });
       });
     });
@@ -651,6 +755,7 @@ async function showGlobalView() {
         cat.items.forEach(issue => {
           const li = document.createElement("li");
           li.className = "issue-item";
+          li.classList.add(issue.isNotImportant ? "not-important" : "needs-attention");
           if (issue.tooltip) li.title = issue.tooltip;
           const text = document.createElement("span");
           text.textContent = issue.descText;
@@ -664,6 +769,12 @@ async function showGlobalView() {
                     data-desc="${encodeURIComponent(JSON.stringify(issue.desc))}"
                     data-rep="${issue.reportId}"
                     data-res="true">✅</button>
+            <button data-action="not-important"
+                    data-pc="${card.pcId}"
+                    data-sec="${issue.section}"
+                    data-desc="${encodeURIComponent(JSON.stringify(issue.desc))}"
+                    data-rep="${issue.reportId}"
+                    data-ni="${issue.isNotImportant}">${issue.isNotImportant ? "⚫" : "⚪"}</button>
             <button data-action="delete"
                     data-pc="${card.pcId}"
                     data-sec="${issue.section}"
@@ -741,7 +852,8 @@ async function fetchHeadphoneIssues() {
         whenTs: meta.whenTs || 0,
         whenStr: meta.whenStr || "",
         user: meta.user || "",
-        reportId: meta.reportId || ""
+        reportId: meta.reportId || "",
+        isNotImportant: isNotImportantDamage("headphones", desc)
       });
     });
   });
@@ -834,6 +946,7 @@ async function renderHeadphones() {
       card.items.forEach(item => {
         const li = document.createElement("li");
         li.className = "issue-item";
+        li.classList.add(item.isNotImportant ? "not-important" : "needs-attention");
         const span = document.createElement("span");
         const reporter = item.user ? `Signalé par ${item.user}` : "Signalement";
         const date = item.whenStr ? ` le ${item.whenStr}` : "";
@@ -852,6 +965,12 @@ async function renderHeadphones() {
                   data-desc="${encodeURIComponent(JSON.stringify(item.desc))}"
                   data-rep="${item.reportId}"
                   data-res="true">✅</button>
+          <button data-action="not-important"
+                  data-pc="${item.pcId}"
+                  data-sec="headphones"
+                  data-desc="${encodeURIComponent(JSON.stringify(item.desc))}"
+                  data-rep="${item.reportId}"
+                  data-ni="${item.isNotImportant}">${item.isNotImportant ? "⚫" : "⚪"}</button>
           <button data-action="delete"
                   data-pc="${item.pcId}"
                   data-sec="headphones"
@@ -898,7 +1017,7 @@ async function handleExternalAction(btn) {
     if (section === "headphones" && isHeadphoneDamage(desc)) {
       newArr = arr.filter(d => !headphoneDamageEquals(d, desc));
     } else {
-      newArr = arr.filter(d => normalizeText(d) !== normalizeText(desc));
+      newArr = arr.filter(d => !matchesDamage(section, d, desc));
     }
     await setDoc(pcRef, { [section]: newArr }, { merge: true });
     const repId = btn.dataset.rep;
@@ -914,7 +1033,7 @@ async function handleExternalAction(btn) {
         if (section==="headphones" && isHeadphoneDamage(desc)){
           newItems = items.filter(it=> !(it.section===section && headphoneDamageEquals(it.desc, desc)));
         }else{
-          newItems = items.filter(it=> !(it.section===section && normalizeText(it.desc)===normalizeText(desc)));
+          newItems = items.filter(it=> !(it.section===section && matchesDamage(section, it.desc, desc)));
         }
         if (newItems.length !== items.length){
           if (newItems.length){
@@ -926,6 +1045,16 @@ async function handleExternalAction(btn) {
         }
       }
     }
+    await showGlobalView();
+    if (headphoneGrid) await renderHeadphones();
+    await drawTable();
+    return;
+  } else if (action === "not-important") {
+    await markNotImportant(pc, section, desc, btn.dataset.ni !== "true");
+    await showGlobalView();
+    if (headphoneGrid) await renderHeadphones();
+    await drawTable();
+    return;
   } else {
     if (!window.confirm("Confirmer le marquage comme réglé ?")) return;
     if (section === "headphones" && isHeadphoneDamage(desc)) {
@@ -948,7 +1077,7 @@ async function handleExternalAction(btn) {
 
   await showGlobalView();
   if (headphoneGrid) await renderHeadphones();
-  if (currentHeadphoneDetail) await drawTable();
+  await drawTable();
 }
 
 globalGrid?.addEventListener("click", async ev => {

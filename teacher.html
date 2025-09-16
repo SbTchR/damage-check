@@ -195,6 +195,10 @@ body {
   background: rgba(41, 204, 131, 0.18);
   color: #0b7a4f;
 }
+.tag-status.neutral {
+  background: rgba(33, 33, 33, 0.08);
+  color: var(--grey-900);
+}
 .action-group {
   display: flex;
   gap: 0.4rem;
@@ -221,6 +225,14 @@ body {
 .action-group button[data-action="delete"]:hover,
 .action-group button[data-action="delete"]:focus-visible {
   background: rgba(255, 77, 109, 0.22);
+}
+.action-group button[data-action="not-important"] {
+  background: rgba(33, 161, 255, 0.18);
+  color: var(--blue-700);
+}
+.action-group button[data-action="not-important"]:hover,
+.action-group button[data-action="not-important"]:focus-visible {
+  background: rgba(33, 161, 255, 0.26);
 }
 .empty-state {
   padding: 1.6rem;
@@ -326,6 +338,17 @@ body {
   line-height: 1.32;
 }
 
+.damage-table tbody tr.needs-attention td,
+.issue-item.needs-attention span {
+  color: #c62828;
+  font-weight: 600;
+}
+.damage-table tbody tr.not-important td,
+.issue-item.not-important span {
+  color: var(--grey-900);
+  font-weight: 500;
+}
+
 .headphone-grid {
   display: grid;
   gap: 1.4rem;
@@ -368,8 +391,9 @@ body {
 .issue-actions button {
   border: none;
   border-radius: 999px;
-  width: 2rem;
-  height: 2rem;
+  min-width: 1rem;
+  height: 1.4rem;
+  padding: 0.9rem 0.5rem;
   font-size: 1.05rem;
   display: flex;
   align-items: center;
