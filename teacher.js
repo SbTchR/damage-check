@@ -30,13 +30,17 @@ const tabButtons = [tabPc, tabGlobal, tabHeadphones];
 const tabPanels  = { dash, globalView, headphoneView };
 
 function activateTab(targetId) {
-  tabButtons.forEach(btn => {
-    const isActive = btn.dataset.target === targetId;
-    btn.classList.toggle("active", isActive);
-  });
-  Object.entries(tabPanels).forEach(([key, panel]) => {
-    panel.classList.toggle("active", key === targetId);
-  });
+  try {
+    tabButtons.filter(Boolean).forEach(btn => {
+      const isActive = btn.dataset.target === targetId;
+      btn.classList.toggle("active", isActive);
+    });
+    Object.entries(tabPanels).forEach(([key, panel]) => {
+      if (panel) panel.classList.toggle("active", key === targetId);
+    });
+  } catch (e) {
+    console.error("activateTab error", e);
+  }
 }
 
 function showPcView() {
@@ -159,9 +163,23 @@ async function removeFromReport(repId, section, desc){
 initDashboard();
 
 async function initDashboard(){
-  const pcsSnap = await getDocs(collection(db,"computers"));
-  const pcIds = [];
-  pcsSnap.forEach(snapshot => pcIds.push(snapshot.id));
+  let pcIds = [];
+  try {
+    const pcsSnap = await getDocs(collection(db,"computers"));
+    pcsSnap.forEach(snapshot => pcIds.push(snapshot.id));
+  } catch (e) {
+    console.warn("computers list failed, falling back to reports", e);
+  }
+  if (pcIds.length === 0) {
+    try {
+      const reps = await getDocs(collection(db, "reports"));
+      const set = new Set();
+      reps.forEach(ds => { const pc = ds.data().pcId; if (pc) set.add(pc); });
+      pcIds = Array.from(set);
+    } catch (e) {
+      console.error("reports fallback failed", e);
+    }
+  }
   pcIds.sort(comparePcIds);
 
   if (pcSelect) {
@@ -670,11 +688,20 @@ async function showGlobalView() {
 
 // ----- VUE ÉCOUTEURS -----
 async function fetchHeadphoneIssues() {
-  const pcsSnap = await getDocs(collection(db, "computers"));
-  const reportsSnap = await getDocs(collection(db, "reports"));
+  let pcsSnap, reportsSnap;
+  try {
+    pcsSnap = await getDocs(collection(db, "computers"));
+  } catch (e) {
+    console.warn("fetchHeadphoneIssues: computers read failed", e);
+  }
+  try {
+    reportsSnap = await getDocs(collection(db, "reports"));
+  } catch (e) {
+    console.warn("fetchHeadphoneIssues: reports read failed", e);
+  }
 
   const latestMap = new Map();
-  reportsSnap.forEach(ds => {
+  reportsSnap?.forEach(ds => {
     const r = ds.data();
     const pcId = r.pcId;
     if (!pcId) return;
@@ -695,7 +722,7 @@ async function fetchHeadphoneIssues() {
   });
 
   const byNumber = new Map();
-  pcsSnap.forEach(pcSnap => {
+  pcsSnap?.forEach(pcSnap => {
     const pcId = pcSnap.id;
     const data = pcSnap.data() ?? {};
     const arr = Array.isArray(data.headphones) ? data.headphones : [];
