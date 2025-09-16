@@ -123,6 +123,40 @@ p {
   color: var(--blue-500);
   line-height: 1;
 }
+.existing-damage-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.85rem;
+  max-width: 520px;
+  justify-items: center;
+}
+.existing-damage-list li {
+  position: relative;
+  padding: 0.45rem 1.1rem;
+  font-family: 'Trebuchet MS', 'Gill Sans', 'Futura', sans-serif;
+  font-weight: 600;
+  font-size: clamp(1.35rem, 1.25vw, 1.55rem);
+  color: #8b0000;
+  background: rgba(255, 226, 226, 0.65);
+  border-radius: 18px;
+  width: 100%;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(139, 0, 0, 0.18);
+}
+.existing-damage-list li::before {
+  content: "";
+}
+.existing-damage-list li span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.damage-bullet {
+  font-size: 1.4em;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
+}
 .section button,
 #modal button,
 #pwdModal button,
@@ -581,8 +615,8 @@ label {
     <p class="lead">Merci de lire ces consignes pour éviter les erreurs dans le formulaire.</p>
     <ul>
       <li>Ne quitte pas cette page avant d’avoir terminé l’intégralité du questionnaire.</li>
-      <li>Vérifie que le dégât n’a pas déjà été signalé avant de le déclarer à nouveau.</li>
-      <li>Ne signale pas les traces minimes (petits traits de stylo, usure normale ou poussière).</li>
+      <li>Vérifie que le dégât n’a pas <b><span class="important-red">DÉJA ÉTÉ signalé</span></b> AVANT de le déclarer une 2e fois.</li>
+      <li>Ne signale <b> <span class="important-red">PAS</span></b> les traces minimes (petits traits de stylo, usure, toutes petites rayures, poussière, etc.).</li>
     </ul>
     <button id="attentionClose">J’ai compris</button>
   </div>
@@ -626,7 +660,7 @@ label {
   <div id="section-keyboard"  class="section hidden">
     <h3>⌨️ Clavier</h3>
     <div class="already-signaled-title">Dégâts déjà signalés :</div>
-    <ul id="list-keyboard"></ul>
+  <ul id="list-keyboard" class="existing-damage-list"></ul>
     <button data-sec="keyboard" data-nothing>Rien à signaler ⏩︎</button>
     <button data-sec="keyboard" data-new>Signaler un nouveau dégât</button>
   </div>
@@ -634,7 +668,7 @@ label {
   <div id="section-mouse"  class="section hidden">
     <h3>🐭 Souris / Trackpad</h3>
     <div class="already-signaled-title">Dégâts déjà signalés :</div>
-    <ul id="list-mouse"></ul>
+  <ul id="list-mouse" class="existing-damage-list"></ul>
     <button data-sec="mouse" data-nothing>Rien à signaler ⏩︎</button>
     <button data-sec="mouse" data-new>Signaler un nouveau dégât</button>
     <button data-back>⏪︎ Précédent</button>
@@ -643,7 +677,7 @@ label {
   <div id="section-screen"  class="section hidden">
     <h3>🖥️ Écran</h3>
     <div class="already-signaled-title">Dégâts déjà signalés :</div>
-    <ul id="list-screen"></ul>
+  <ul id="list-screen" class="existing-damage-list"></ul>
     <button data-sec="screen" data-nothing>Rien à signaler ⏩︎</button>
     <button data-sec="screen" data-new>Signaler un nouveau dégât</button>
     <button data-back>⏪︎ Précédent</button>
@@ -652,7 +686,7 @@ label {
   <div id="section-headphones" class="section section-wide hidden">
     <h3>🎧 Écouteurs</h3>
     <div class="already-signaled-title">Dégâts déjà signalés :</div>
-    <ul id="list-headphones"></ul>
+  <ul id="list-headphones" class="existing-damage-list"></ul>
 
     <label>
       J'utilise une paire d'écouteurs :
@@ -679,7 +713,7 @@ label {
   <div id="section-other"  class="section section-wide hidden">
     <h3>🛠️ Autres</h3>
     <div class="already-signaled-title">Dégâts déjà signalés :</div>
-    <ul id="list-other"></ul>
+  <ul id="list-other" class="existing-damage-list"></ul>
     <button data-sec="other" data-nothing>Rien à signaler et terminer la vérification ✔︎</button>
     <button data-sec="other" data-new>Signaler un nouveau dégât</button>
     <button data-back>⏪︎ Précédent</button>

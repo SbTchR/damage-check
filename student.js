@@ -37,6 +37,11 @@ import {
   doc, getDoc, setDoc, updateDoc, arrayUnion, addDoc, collection, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+const attentionEmojis = ["⚠️","🚨","❗","👀","📍","🔎","🛑","💥","✨","🔧"];
+function randomAttentionEmoji(){
+  return attentionEmojis[Math.floor(Math.random()*attentionEmojis.length)];
+}
+
 /* ------ Paramètres URL ------ */
 const params = new URLSearchParams(location.search);
 const pcId   = params.get("pc");
@@ -71,14 +76,26 @@ const data = (await getDoc(pcRef)).data();
   const ul = document.getElementById(`list-${sec}`);
   if (!ul || !data[sec]) return;
   data[sec].forEach(d => {
-    // Pour headphones, si c'est un objet, affiche numéro + description
+    const li = document.createElement("li");
+    const wrapper = document.createElement("span");
+    const bullet = document.createElement("span");
+    bullet.className = "damage-bullet";
+    bullet.textContent = randomAttentionEmoji();
+    const textSpan = document.createElement("span");
+
     if (sec === "headphones" && typeof d === "object" && d !== null) {
-      const li = document.createElement("li");
-      li.textContent = `N°${d.numero || "?"} : ${d.description || d.desc || ""}`;
-      ul.appendChild(li);
+      const label = d.description || d.desc || "";
+      textSpan.textContent = `N°${d.numero || "?"} : ${label}`;
+    } else if (typeof d === "object" && d !== null) {
+      textSpan.textContent = d.text || d.description || d.desc || JSON.stringify(d);
     } else {
-      const li = document.createElement("li"); li.textContent = d; ul.appendChild(li);
+      textSpan.textContent = d;
     }
+
+    wrapper.appendChild(bullet);
+    wrapper.appendChild(textSpan);
+    li.appendChild(wrapper);
+    ul.appendChild(li);
   });
 });
 
