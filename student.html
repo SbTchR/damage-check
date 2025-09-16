@@ -494,7 +494,7 @@ label {
   border-radius: var(--radius-lg);
   box-shadow: 0 30px 55px rgba(12, 36, 74, 0.28);
   padding: clamp(2.4rem, 4.6vw, 3.1rem);
-  width: min(640px, 94vw);
+  width: min(700px, 94vw);
   display: grid;
   gap: 1.4rem;
 }
@@ -522,9 +522,7 @@ label {
   top: 0;
   font-size: 1.4rem;
 }
-.attention-card li:nth-child(1)::before { content: "⚠️"; }
-.attention-card li:nth-child(2)::before { content: "🔁"; }
-.attention-card li:nth-child(3)::before { content: "🚫"; }
+
 #attentionClose {
   justify-self: flex-start;
   background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
@@ -611,12 +609,12 @@ label {
 
 <div id="attentionModal" role="dialog" aria-labelledby="attentionTitle" aria-modal="true">
   <div class="attention-card">
-    <h2 id="attentionTitle">Avant de commencer</h2>
-    <p class="lead">Merci de lire ces consignes pour éviter les erreurs dans le formulaire.</p>
     <ul>
-      <li>Ne quitte pas cette page avant d’avoir terminé l’intégralité du questionnaire.</li>
-      <li>Vérifie que le dégât n’a pas <b><span class="important-red">DÉJA ÉTÉ signalé</span></b> AVANT de le déclarer une 2e fois.</li>
-      <li>Ne signale <b> <span class="important-red">PAS</span></b> les traces minimes (petits traits de stylo, usure, toutes petites rayures, poussière, etc.).</li>
+      <li>❗ <span class="important-red">Avant</span> d’utiliser cet ordinateur, <span class="important-red">tu dois</span> remplir ce questionnaire.</li>
+      <li>⚠️ Ne <span class="important-red">quitte pas</span> cette page avant d’avoir terminé le questionnaire.</li>
+      <li>🔄 Si le dégât a <span class="important-red">DÉJA </span>été signalé, ne le déclare <span class="important-red">PAS</span></b>  une 2e fois.</li>
+      <li>🚫 Ne signale <span class="important-red">PAS</span> les traces minimes 
+        <br><h6>(petits traits de stylo, usure, toutes petites rayures, poussière, etc.).</h6></li>
     </ul>
     <button id="attentionClose">J’ai compris</button>
   </div>
@@ -624,15 +622,9 @@ label {
 
 <main class="content-frame">
   <section id="section-welcome" class="section">
-    <span class="welcome-badge">Formulaire de vérification</span>
     <h2>Bienvenue&nbsp;!</h2>
-    <p class="lead">Avant d’utiliser cet ordinateur, tu dois compléter ce contrôle rapide.</p>
-    <div class="big-important">
-      <b>❗ Avant d’utiliser cet ordinateur, tu dois <span class="important-red">obligatoirement</span> remplir ce questionnaire.</b>
-      <b>⛔ Tu <span class="important-red">ne dois pas quitter</span> cette page tant que le formulaire n’aura pas été rempli.</b>
-    </div>
     <ul class="welcome-points">
-      <li>Signale honnêtement tout problème constaté (touche manquante, câble débranché, rayure, stylo, etc.).</li>
+      <li>Signale honnêtement tout problème constaté (touche manquante, câble débranché, rayure bien visible, etc.).</li>
       <li>Si tu déclares un nouveau dégât, l'enseignant devra le <span class="important-red">valider avec un mot de passe 🛡️</span> tout à la fin.</li>
     </ul>
     <p class="fine-print">Merci de ta collaboration pour le respect du matériel !</p>
