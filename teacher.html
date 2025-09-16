@@ -1,68 +1,501 @@
-<!DOCTYPE html><html lang="fr"><head>
-<meta charset="UTF-8"><title>Tableau de bord dégâts</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
-<style>body{margin:20px} table{width:100%}</style>
-</head><body>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Tableau de bord dégâts</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css" />
+<style>
+:root {
+  --blue-700: #0f4fff;
+  --blue-500: #3299ff;
+  --purple-100: #f5f2ff;
+  --purple-50: #faf7ff;
+  --grey-900: #1b2430;
+  --grey-600: #4f5d72;
+  --grey-200: #dbe4f3;
+  --card: rgba(255,255,255,0.92);
+  --shadow-lg: 0 24px 42px rgba(33, 72, 136, 0.18);
+  --shadow-sm: 0 14px 26px rgba(33, 72, 136, 0.12);
+  --radius-lg: 26px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  color-scheme: light;
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  background: radial-gradient(circle at 0% -10%, #e8f1ff 0%, #eef5ff 35%, #ffffff 68%);
+  color: var(--grey-900);
+  display: flex;
+  justify-content: center;
+  padding: clamp(2.2rem, 4vw, 3.4rem) clamp(1.4rem, 3vw, 2.4rem) clamp(3rem, 5vw, 4rem);
+}
+.app-shell {
+  width: min(1200px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.6rem, 3vw, 2.2rem);
+}
+.page-header {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.8rem, 3vw, 2.4rem);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(14px);
+  display: grid;
+  gap: 0.8rem;
+}
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+.page-title span {
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+}
+.page-title h1 {
+  font-size: clamp(1.9rem, 2.8vw, 2.4rem);
+  margin: 0;
+  color: var(--blue-700);
+}
+.page-subtitle {
+  margin: 0;
+  color: var(--grey-600);
+  font-size: clamp(1.1rem, 1.4vw, 1.25rem);
+}
+.tab-bar {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  flex: 1 1 220px;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.95rem 1.3rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: rgba(15, 79, 255, 0.1);
+  color: var(--blue-700);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.tab-btn:hover,
+.tab-btn:focus-visible {
+  transform: translateY(-2px);
+  background: rgba(15, 79, 255, 0.18);
+  box-shadow: 0 14px 24px rgba(33, 72, 136, 0.16);
+}
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
+  color: #fff;
+  box-shadow: 0 16px 28px rgba(33, 72, 136, 0.22);
+}
+.tab-panel {
+  display: none;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: clamp(1.8rem, 3vw, 2.4rem);
+  backdrop-filter: blur(14px);
+}
+.tab-panel.active {
+  display: block;
+}
+.panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-bottom: 1.3rem;
+}
+.panel-header h2 {
+  margin: 0;
+  color: var(--blue-700);
+}
+.panel-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.4rem;
+  align-items: center;
+}
+.select-label {
+  font-weight: 600;
+  display: grid;
+  gap: 0.35rem;
+  color: var(--grey-900);
+}
+.select-label select {
+  min-width: 160px;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--grey-200);
+  font-size: 1.05rem;
+}
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 1.02rem;
+  color: var(--grey-600);
+}
+.checkbox-inline input[type="checkbox"] {
+  inline-size: 1.2em;
+  block-size: 1.2em;
+  accent-color: var(--blue-700);
+}
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px rgba(15, 79, 255, 0.08);
+  background: var(--purple-50);
+  position: relative;
+}
+.damage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.05rem;
+  color: var(--grey-900);
+}
+.damage-table thead {
+  background: rgba(15, 79, 255, 0.08);
+}
+.damage-table th,
+.damage-table td {
+  padding: 0.95rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(27, 36, 68, 0.1);
+}
+.damage-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.65);
+}
+.damage-table tbody tr.section-row td {
+  background: rgba(15, 79, 255, 0.12);
+  font-weight: 700;
+  color: var(--blue-700);
+  text-transform: uppercase;
+}
+.tag-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+}
+.tag-status.danger {
+  background: rgba(255, 77, 109, 0.14);
+  color: #c62839;
+}
+.tag-status.success {
+  background: rgba(41, 204, 131, 0.18);
+  color: #0b7a4f;
+}
+.action-group {
+  display: flex;
+  gap: 0.4rem;
+}
+.action-group button {
+  font-size: 0.95rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: rgba(15, 79, 255, 0.12);
+  color: var(--blue-700);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.action-group button:hover,
+.action-group button:focus-visible {
+  background: rgba(15, 79, 255, 0.22);
+  transform: translateY(-1px);
+}
+.action-group button[data-action="delete"] {
+  background: rgba(255, 77, 109, 0.14);
+  color: #c62839;
+}
+.action-group button[data-action="delete"]:hover,
+.action-group button[data-action="delete"]:focus-visible {
+  background: rgba(255, 77, 109, 0.22);
+}
+.empty-state {
+  padding: 1.6rem;
+  text-align: center;
+  color: var(--grey-600);
+  font-size: 1.05rem;
+}
+.hidden {
+  display: none !important;
+}
+.global-summary {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 1.6rem;
+}
+.global-summary h2 {
+  margin: 0;
+  color: var(--blue-700);
+}
+.global-summary p {
+  margin: 0;
+  color: var(--grey-600);
+}
+.global-grid {
+  display: grid;
+  gap: 1.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.pc-card {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+}
+.pc-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(15, 79, 255, 0.16);
+  pointer-events: none;
+}
+.pc-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.pc-card header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--blue-700);
+}
+.pc-card header span {
+  font-size: 0.95rem;
+  color: var(--grey-600);
+}
+.issue-sections {
+  display: grid;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+}
+.section-card {
+  background: rgba(15, 79, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.85rem;
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+}
+.section-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  color: var(--blue-700);
+}
+.section-card header span:last-child {
+  font-size: 0.88rem;
+  color: var(--grey-600);
+}
+.issue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+.issue-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 0.45rem;
+  align-items: center;
+  font-size: 1.04rem;
+}
+.issue-item span {
+  line-height: 1.32;
+}
 
-<h2>Tableau de bord</h2>
+.headphone-grid {
+  display: grid;
+  gap: 1.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.headphone-card {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1.3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.headphone-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.headphone-card header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--blue-700);
+}
+.headphone-card header span {
+  font-size: 0.92rem;
+  color: var(--grey-600);
+}
+.headphone-card .issue-sections {
+  gap: 0.5rem;
+}
+.headphone-card .section-card {
+  background: rgba(33, 161, 255, 0.12);
+}
+.issue-actions {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+.issue-actions button {
+  border: none;
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 79, 255, 0.18);
+  color: var(--blue-700);
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.issue-actions button:hover,
+.issue-actions button:focus-visible {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.issue-actions button[data-action="delete"] {
+  background: rgba(255, 77, 109, 0.24);
+  color: #a32031;
+}
+.issue-actions button[data-action="delete"]:hover,
+.issue-actions button[data-action="delete"]:focus-visible {
+  filter: brightness(1.08);
+}
+.card-empty {
+  margin: 0;
+  color: var(--grey-600);
+  font-size: 0.98rem;
+}
+.headphones-filter {
+  gap: 0.6rem;
+}
+@media (max-width: 720px) {
+  .tab-btn {
+    flex: 1 1 100%;
+  }
+  .table-wrapper {
+    box-shadow: none;
+    background: transparent;
+  }
+  .damage-table th,
+  .damage-table td {
+    padding: 0.8rem 0.75rem;
+  }
+  .app-shell {
+    gap: 1.3rem;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="page-header">
+    <div class="page-title">
+      <span>🛠️</span>
+      <h1>Tableau de bord des dégâts</h1>
+    </div>
+    <p class="page-subtitle">Suivi rapide des signalements envoyés par les élèves</p>
+  </header>
 
-<div style="margin-bottom:1em">
-  <button id="tabPc">Vue par ordinateur</button>
-  <button id="tabGlobal">Vue d'ensemble</button>
-  <button id="tabHeadphones">Écouteurs</button>
-</div>
+  <nav class="tab-bar">
+    <button id="tabPc" class="tab-btn active" data-target="dash">Vue par ordinateur</button>
+    <button id="tabGlobal" class="tab-btn" data-target="globalView">Vue d'ensemble</button>
+    <button id="tabHeadphones" class="tab-btn" data-target="headphoneView">Écouteurs</button>
+  </nav>
 
-<div id="dash" style="display:block">
-  <select id="pcSelect"></select>
-  <label><input type="checkbox" id="onlyDamages"> N’afficher que les dégâts</label>
-  <label><input type="checkbox" id="onlyUnres"> N’afficher que les dégâts non réglés</label>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Élève</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Statut</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
-</div>
-<div id="globalView" style="display:none; background:#f7f0ff;">
-  <table>
-    <thead>
-      <tr>
-        <th>PC</th>
-        <th>Date</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Statut</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="globalTbody"></tbody>
-  </table>
-</div>
-<div id="headphoneView" style="display:none; padding:1em 0;">
-  <label for="filterHeadphone">🔍 Filtrer par n° écouteurs :</label>
-  <input type="text" id="filterHeadphone" placeholder="Ex : 5" style="margin-left:0.5em; max-width:80px;" />
-  <button id="filterHeadphoneBtn" style="margin-left:0.5em;">Valider</button>
-  <table style="width:100%; margin-top:0.8em;">
-    <thead>
-      <tr>
-        <th>PC</th>
-        <th>Date</th>
-        <th>Élève</th>
-        <th>Numéro</th>
-        <th>Dégâts</th>
-      </tr>
-    </thead>
-    <tbody id="headphoneTbody"></tbody>
-  </table>
+  <section id="dash" class="tab-panel active">
+    <div class="panel-header">
+      <div class="panel-controls">
+        <label class="select-label">Ordinateur
+          <select id="pcSelect"></select>
+        </label>
+        <label class="checkbox-inline">
+          <input type="checkbox" id="onlyDamages" />
+          <span>Masquer les entrées « rien »</span>
+        </label>
+        <label class="checkbox-inline">
+          <input type="checkbox" id="onlyUnres" />
+          <span>Afficher uniquement les dégâts non réglés</span>
+        </label>
+        <label class="select-label">Écouteur
+          <select id="pcHeadphoneSelect">
+            <option value="">— Aucun —</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table class="damage-table">
+        <thead>
+          <tr>
+            <th>Composant</th>
+            <th>Description</th>
+            <th>Signalé le</th>
+            <th>Élève</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty-state hidden" id="pcEmpty">Aucun signalement pour ce poste.</div>
+    </div>
+  </section>
+
+  <section id="globalView" class="tab-panel">
+    <div class="global-summary">
+      <h2>Vue d'ensemble</h2>
+      <p>Chaque carte liste les dégâts non résolus et l'élève qui a fait le dernier signalement.</p>
+    </div>
+    <div id="globalGrid" class="global-grid"></div>
+    <div class="empty-state hidden" id="globalEmpty">Aucun dégât en attente sur l'ensemble des ordinateurs.</div>
+  </section>
+
+  <section id="headphoneView" class="tab-panel">
+    <div class="panel-header">
+      <h2>Signalements écouteurs</h2>
+      <div class="panel-controls headphones-filter">
+        <label class="select-label">Numéro d'écouteur
+          <select id="headphoneSelect"></select>
+        </label>
+      </div>
+    </div>
+    <div class="headphone-grid" id="headphoneGrid"></div>
+    <div class="empty-state hidden" id="headphoneEmpty">Aucun signalement d'écouteurs pour le moment.</div>
+  </section>
 </div>
 
 <script type="module" src="teacher.js"></script>
-
-</body></html>
+</body>
+</html>

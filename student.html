@@ -6,212 +6,548 @@
 <title>Vérification ordinateur</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
 <style>
+:root {
+  --blue-700: #0f5bff;
+  --blue-600: #1f7cff;
+  --blue-500: #21a1ff;
+  --blue-400: #3ecbff;
+  --grey-900: #142033;
+  --grey-600: #4a5e7b;
+  --grey-200: #d7e1f4;
+  --card: rgba(255,255,255,0.88);
+  --card-strong: rgba(255,255,255,0.96);
+  --shadow-lg: 0 24px 40px rgba(27,94,166,0.12);
+  --shadow-sm: 0 12px 24px rgba(15,63,126,0.1);
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 13px;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-  background: linear-gradient(120deg, #e0f7fa 0%, #fff 100%);
+  background: radial-gradient(circle at 0% 0%, #eef6ff 0%, #d9edff 26%, #f4fbff 70%, #ffffff 100%);
   min-height: 100vh;
-  color: #222;
+  color: var(--grey-900);
+  display: flex;
+  justify-content: center;
+  font-size: clamp(1.5rem, 2vw, 1.75rem);
+  line-height: 1.85;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(40,110,255,0.08), rgba(0,204,255,0.06));
+  z-index: -1;
+}
+main.content-frame {
+  width: min(1120px, 96vw);
+  margin: 0 auto;
+  padding: clamp(3rem, 4.8vw, 5rem) 0 clamp(4.8rem, 6.6vw, 7.2rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.4rem, 5vw, 3.2rem);
 }
 h2, h3, h4 {
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  margin: 0 0 0.3em 0;
 }
 h2 {
-  font-size: 2.3em;
-  color: #0077ff;
-  margin-top: 1.2em;
-  margin-bottom: 0.5em;
+  font-size: clamp(2.8rem, 4.8vw, 3.6rem);
+  color: var(--blue-700);
 }
 h3 {
-  font-size: 1.5em;
-  color: #0077ff;
-  margin-bottom: 0.3em;
+  font-size: clamp(2.1rem, 3.8vw, 2.7rem);
+  color: var(--blue-700);
 }
 h4 {
-  font-size: 1.2em;
-  color: #333;
+  font-size: clamp(1.8rem, 2.6vw, 2.15rem);
+  color: var(--blue-700);
+}
+p {
+  margin: 0;
+}
+.lead {
+  font-size: clamp(1.6rem, 1.8vw, 1.85rem);
+  color: var(--grey-600);
+  margin-bottom: 1.5rem;
 }
 .section {
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1.5px 4px rgba(0,119,255,0.08);
-  max-width: 450px;
-  margin: 2em auto 2.5em auto;
-  padding: 2.5em 2em 2em 2em;
-  transition: box-shadow 0.2s;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: clamp(2.2rem, 4.6vw, 3.3rem) clamp(1.9rem, 4.4vw, 3.1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+  backdrop-filter: blur(18px);
+}
+.section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,0.6);
+  pointer-events: none;
 }
 .section-wide {
-  max-width: 600px;
-  min-width: 320px;
+  max-width: none;
 }
 .section ul {
-  margin-bottom: 1.2em;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1rem;
 }
-.section button {
-  margin: 0.4em 0.4em 0 0;
-  font-size: 1.1em;
-  padding: 0.7em 2.2em;
-  border: none;
-  border-radius: 1em;
-  cursor: pointer;
-  background: linear-gradient(90deg,#0077ff,#00e0ff);
-  color: #fff;
+.section ul li {
+  position: relative;
+  padding-left: 2.1rem;
+  line-height: 1.78;
+  font-size: clamp(1.55rem, 1.6vw, 1.85rem);
+}
+.section ul li::before {
+  content: "•";
+  position: absolute;
+  left: 0.35rem;
+  top: 0;
+  font-size: 1.4em;
+  color: var(--blue-500);
+  line-height: 1;
+}
+.section button,
+#modal button,
+#pwdModal button,
+#attentionClose {
+  margin: 0;
+  font-size: clamp(1.7rem, 1.8vw, 1.95rem);
   font-weight: 600;
-  box-shadow: 0 1px 7px 0 #0077ff1a;
-  transition: background 0.3s, box-shadow 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.7em;
-  box-sizing: border-box;
-}
-.section button:hover, .section button:focus {
-  background: linear-gradient(90deg,#005ccf,#00b4cc);
-  box-shadow: 0 4px 16px 0 #0077ff33;
-}
-#welcomeStart {
+  padding: 1.35rem 2.8rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
+  box-shadow: 0 12px 18px rgba(27, 104, 255, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-top: 2em;
-  font-size: 1.3em;
-  padding: 1.1em 2.7em;
-  min-height: 56px;
-  letter-spacing: 0.01em;
-  gap: 0.5em;
+  gap: 0.55rem;
+}
+.section button:hover,
+.section button:focus-visible,
+#modal button:hover,
+#modal button:focus-visible,
+#pwdModal button:hover,
+#pwdModal button:focus-visible,
+#attentionClose:hover,
+#attentionClose:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 26px rgba(27, 104, 255, 0.22);
+  filter: brightness(1.04);
+}
+.section button:active,
+#modal button:active,
+#pwdModal button:active,
+#attentionClose:active {
+  transform: translateY(0px);
+  box-shadow: 0 10px 18px rgba(27, 104, 255, 0.18);
+}
+.section button[data-back] {
+  background: rgba(15, 80, 160, 0.08);
+  color: var(--blue-700);
+  box-shadow: none;
+  border: 1px solid rgba(36, 110, 255, 0.22);
+}
+.section button[data-back]:hover,
+.section button[data-back]:focus-visible {
+  background: rgba(15, 80, 160, 0.16);
+  color: var(--blue-700);
+  box-shadow: none;
+}
+.section button[data-sec][data-nothing] {
+  background: rgba(31, 122, 255, 0.14);
+  color: var(--blue-700);
+  border: 1px solid rgba(31, 122, 255, 0.28);
+  box-shadow: none;
+}
+.section button[data-sec][data-nothing]:hover,
+.section button[data-sec][data-nothing]:focus-visible {
+  background: rgba(31, 122, 255, 0.2);
+  box-shadow: none;
+}
+#welcomeStart {
+  align-self: flex-start;
+  margin-top: 0.6rem;
+  font-size: clamp(1.85rem, 1.7vw, 2rem);
+  padding-inline: 3.8rem;
 }
 #section-welcome {
-  text-align: center;
-  margin-bottom: 1.8em;
-  background: linear-gradient(120deg, #f5fcff 60%, #d9f6ff 100%);
-  border-radius: 18px;
-  box-shadow: 0 2px 12px #0077ff14;
-  max-width: 900px;
-  padding: 2.5em 2em 2.5em 2em;
+  background: linear-gradient(140deg, rgba(255,255,255,0.9), rgba(229,242,255,0.92));
+  position: relative;
+  overflow: hidden;
 }
-#section-welcome ul {
-  text-align: left;
-  margin: 1em auto 1.2em auto;
-  display: inline-block;
-  font-size: 1.06em;
+#section-welcome::before {
+  content: "";
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(33,161,255,0.18), rgba(33,161,255,0));
+  top: -120px;
+  right: -80px;
+  z-index: 0;
 }
-#section-welcome b {
-  color: #005ccf;
+#section-welcome > * {
+  position: relative;
+  z-index: 1;
+}
+.welcome-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--blue-700);
+  background: rgba(33, 161, 255, 0.16);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: clamp(1.35rem, 1.2vw, 1.55rem);
+}
+.big-important {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-md);
+  padding: 1.6rem 1.8rem;
+  box-shadow: var(--shadow-sm);
+}
+.big-important b {
+  font-size: clamp(1.7rem, 1.8vw, 1.95rem);
+  color: var(--grey-900);
+  font-weight: 700;
+  line-height: 1.45;
+}
+.big-important b + b {
+  display: block;
+  margin-top: 0.7rem;
+}
+.important-red {
+  color: #ff2d4f !important;
+  font-weight: 800;
+}
+.welcome-points {
+  margin: 0;
+  gap: 0.9rem;
+}
+.welcome-points li::before {
+  content: "✔";
+  color: var(--blue-500);
+  font-size: 1.3rem;
+  top: 0.05rem;
+}
+.fine-print {
+  font-size: clamp(1.5rem, 1.4vw, 1.65rem);
+  color: var(--grey-600);
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.6rem;
+}
+.info-row {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 2rem 2.2rem;
+  border-radius: var(--radius-md);
+  background: var(--card-strong);
+  box-shadow: var(--shadow-sm);
+}
+.info-icon {
+  font-size: 2.6rem;
+}
+.info-meta span {
+  display: block;
+  color: var(--grey-600);
+  font-size: clamp(1.55rem, 1.5vw, 1.75rem);
+  margin-bottom: 0.2rem;
+}
+.info-meta strong {
+  font-size: clamp(2rem, 1.9vw, 2.3rem);
+}
+#pcId, #userId {
+  color: var(--blue-700);
+  font-weight: 700;
+  font-size: clamp(1.85rem, 1.7vw, 2.1rem);
+}
+label {
+  font-size: clamp(1.7rem, 1.6vw, 1.9rem);
+  font-weight: 600;
+  color: var(--grey-900);
+}
+#section-rules > label {
+  display: block;
+  margin-top: 1.2rem;
+}
+#section-rules input[type="checkbox"] {
+  inline-size: 1.6em;
+  block-size: 1.6em;
+  margin-right: 0.6rem;
+}
+#section-headphones .radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 0.4rem 0 0.4rem;
+}
+#section-headphones .radio-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+#section-headphones input[type="radio"] {
+  inline-size: 1.5em;
+  block-size: 1.5em;
+}
+#section-headphones input[type="checkbox"] {
+  inline-size: 1.5em;
+  block-size: 1.5em;
+}
+#section-headphones input[type="radio"],
+#section-headphones input[type="checkbox"] {
+  accent-color: var(--blue-600);
+}
+#headphone-details {
+  background: rgba(240, 247, 255, 0.9);
+  border-radius: var(--radius-sm);
+  padding: 1.6rem 1.4rem;
+  display: grid;
+  gap: 1.1rem;
+}
+#headphoneNumber {
+  max-width: 220px;
+  font-size: clamp(1.65rem, 1.6vw, 1.9rem);
+}
+.headphone-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: center;
+}
+.headphone-actions input {
+  flex: 0 0 auto;
+}
+#btnNoHeadphone {
+  margin-top: 0.6rem;
+  align-self: flex-start;
 }
 .already-signaled-title {
   font-weight: 600;
-  color: #0077ff;
-  font-size: 1.09em;
-  margin-bottom: 0.3em;
-  margin-top: 0.6em;
+  color: var(--blue-700);
+  letter-spacing: 0.01em;
+  margin-top: 0.5rem;
+  font-size: clamp(1.6rem, 1.6vw, 1.85rem);
 }
-#section-welcome span {
-  font-size: 1.1em;
+#modal, #pwdModal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(8, 21, 45, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.6rem;
 }
-#pcId, #userId {
-  color: #0077ff;
-  font-weight: bold;
-  font-size: 1.08em;
+#modal:not(.hidden), #pwdModal:not(.hidden) {
+  display: flex;
+}
+.dialog-card {
+  background: var(--card-strong);
+  padding: 2.2rem clamp(1.6rem, 3vw, 2.8rem);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 40px rgba(12, 36, 74, 0.28);
+  width: min(520px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+#modal h4, #pwdModal h4 {
+  margin-bottom: 0.4rem;
+}
+#modal input,
+#pwdModal input {
+  font-size: clamp(1.75rem, 1.8vw, 2rem);
+  padding: 1rem 1.2rem;
+  border-radius: 14px;
+  border: 1.3px solid rgba(20, 95, 200, 0.25);
+  background: rgba(255,255,255,0.95);
+  box-shadow: inset 0 1px 3px rgba(9, 33, 74, 0.08);
+  color: var(--grey-900);
+  width: 100%;
+}
+#modal button, #pwdModal button {
+  width: auto;
+  min-width: 210px;
+  justify-content: center;
+}
+.modal-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  justify-content: flex-end;
+}
+#pwdModal ul {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+#pwdModal ul li {
+  font-size: clamp(1.75rem, 1.8vw, 2rem);
+  line-height: 1.75;
+  padding-left: 1.5rem;
+  position: relative;
+}
+#pwdModal ul li::before {
+  content: "•";
+  color: var(--blue-500);
+  top: 0.2rem;
+  left: 0;
+  position: absolute;
+}
+#cancel, #pwdCancel {
+  background: rgba(15, 80, 160, 0.08);
+  color: var(--blue-700);
+  border: 1px solid rgba(36, 110, 255, 0.22);
+}
+#cancel:hover, #cancel:focus-visible,
+#pwdCancel:hover, #pwdCancel:focus-visible {
+  background: rgba(15, 80, 160, 0.16);
+}
+#rulesFinish.hidden, #btnNoHeadphone.hidden {
+  display: none !important;
+}
+#rulesFinish {
+  align-self: flex-start;
+  margin-top: 0.8rem;
+}
+#section-rules ul li {
+  padding-left: 0;
+}
+#section-rules ul li::before {
+  display: none;
+}
+#attentionModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 18, 43, 0.55);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.8rem;
+  animation: fadeIn 0.25s ease forwards;
+}
+.attention-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f1f7ff 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 30px 55px rgba(12, 36, 74, 0.28);
+  padding: clamp(2.4rem, 4.6vw, 3.1rem);
+  width: min(640px, 94vw);
+  display: grid;
+  gap: 1.4rem;
+}
+.attention-card h2 {
+  color: var(--blue-700);
+  margin-bottom: 0.2rem;
+}
+.attention-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+.attention-card li {
+  position: relative;
+  padding-left: 2.2rem;
+  color: var(--grey-900);
+  font-size: clamp(1.7rem, 1.8vw, 1.95rem);
+  line-height: 1.78;
+}
+.attention-card li::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 1.4rem;
+}
+.attention-card li:nth-child(1)::before { content: "⚠️"; }
+.attention-card li:nth-child(2)::before { content: "🔁"; }
+.attention-card li:nth-child(3)::before { content: "🚫"; }
+#attentionClose {
+  justify-self: flex-start;
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
+}
+#attentionClose:hover, #attentionClose:focus-visible {
+  filter: brightness(1.05);
 }
 .hidden {
   display: none !important;
 }
-#modal, #pwdModal {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 50;
-  background: rgba(245, 252, 255, 0.94);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-  border-radius: 18px;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-#modal > *, #pwdModal > * {
-  font-size: 1.1em;
-}
-#modal, #pwdModal {
-  flex-direction: column;
-}
-#modal h4, #pwdModal h4 {
-  color: #0077ff;
-  text-shadow: 0 1px 4px #bbe1ff99;
-}
-#modal input, #pwdModal input {
-  font-size: 1.1em;
-  padding: 0.6em 1.2em;
-  border-radius: 0.7em;
-  border: 1.2px solid #bbe1ff;
-  margin: 1em 0;
-  width: 90%;
-  max-width: 320px;
-  background: #fafdff;
-  box-shadow: 0 2px 8px #0077ff0e;
-  color: #222;
-}
-#modal button, #pwdModal button {
-  width: 140px;
-  padding: 0.6em 0;
-  font-size: 1.05em;
-  border-radius: 0.9em;
-  margin: 0.5em 0.7em 0.5em 0;
-}
-#modal button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#pwdModal button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#modal .modal-btns {
-  display: flex;
-  flex-direction: row;
-  gap: 1em;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-#pwdModal ul {
-  margin: 1.2em 0 0.7em 0;
-  padding: 0 1em;
-}
-.big-important b {
-  font-size: 1.25em;
-  color: #222;
-  font-weight: 800;
-  line-height: 1.28;
-  letter-spacing: 0.02em;
-}
-.important-red {
-  color: #ff253a !important;
-  font-weight: 900;
-  letter-spacing: 0.01em;
-}
-.info-row {
-  margin-left: 1.5em;
-  margin-top: 1em;
-  font-size: 1.09em;
-  display: flex;
-  align-items: center;
-  gap: 1em;
-}
-@media (max-width: 600px) {
-  .section, #section-welcome {
-    max-width: 99vw;
-    padding: 1em 1vw 1.5em 1vw;
+@media (max-width: 720px) {
+  main.content-frame {
+    width: min(96vw, 740px);
+    gap: 2.2rem;
   }
+  .section {
+    padding: 2rem;
+    gap: 1.6rem;
+  }
+  .big-important {
+    padding: 1.4rem 1.5rem;
+  }
+  .info-row {
+    padding: 1.6rem 1.8rem;
+  }
+  .section button {
+    width: 100%;
+  }
+  .modal-btns {
+    justify-content: center;
+  }
+  #modal button, #pwdModal button {
+    flex: 1;
+  }
+  #attentionClose {
+    width: 100%;
+  }
+}
+@media (max-width: 500px) {
   h2 {
-    font-size: 1.4em;
+    font-size: 2.4rem;
   }
   h3 {
-    font-size: 1.1em;
+    font-size: 2rem;
+  }
+  .welcome-badge {
+    font-size: 1.2rem;
+  }
+  .attention-card {
+    gap: 1.1rem;
+  }
+  .section ul li {
+    padding-left: 1.7rem;
   }
 }
 </style>
@@ -239,126 +575,181 @@ h4 {
 </head>
 <body>
 
-<div id="section-welcome" class="section">
-  <h2>Bienvenue&nbsp;!</h2>
-  <p>
-    <div class="big-important">
-      <b>❗ Avant d’utiliser cet ordinateur, tu dois <span class="important-red">obligatoirement</span> remplir ce questionnaire.</b><br>
-      <b style="display:block; margin-top:0.7em;">⛔ Tu <span class="important-red">ne dois pas quitter</span> cette page tant que le formulaire n’aura pas été rempli.</b>
-    </div>
-    <br>
-    <i>🧑‍💻 Consigne :</i> <br>
+<div id="attentionModal" role="dialog" aria-labelledby="attentionTitle" aria-modal="true">
+  <div class="attention-card">
+    <h2 id="attentionTitle">Avant de commencer</h2>
+    <p class="lead">Merci de lire ces consignes pour éviter les erreurs dans le formulaire.</p>
     <ul>
-      <li>Signale honnêtement tout problème constaté (touche manquante, câble débranchlé, rayure, stylo, etc).</li>
+      <li>Ne quitte pas cette page avant d’avoir terminé l’intégralité du questionnaire.</li>
+      <li>Vérifie que le dégât n’a pas déjà été signalé avant de le déclarer à nouveau.</li>
+      <li>Ne signale pas les traces minimes (petits traits de stylo, usure normale ou poussière).</li>
+    </ul>
+    <button id="attentionClose">J’ai compris</button>
+  </div>
+</div>
+
+<main class="content-frame">
+  <section id="section-welcome" class="section">
+    <span class="welcome-badge">Formulaire de vérification</span>
+    <h2>Bienvenue&nbsp;!</h2>
+    <p class="lead">Avant d’utiliser cet ordinateur, tu dois compléter ce contrôle rapide.</p>
+    <div class="big-important">
+      <b>❗ Avant d’utiliser cet ordinateur, tu dois <span class="important-red">obligatoirement</span> remplir ce questionnaire.</b>
+      <b>⛔ Tu <span class="important-red">ne dois pas quitter</span> cette page tant que le formulaire n’aura pas été rempli.</b>
+    </div>
+    <ul class="welcome-points">
+      <li>Signale honnêtement tout problème constaté (touche manquante, câble débranché, rayure, stylo, etc.).</li>
       <li>Si tu déclares un nouveau dégât, l'enseignant devra le <span class="important-red">valider avec un mot de passe 🛡️</span> tout à la fin.</li>
     </ul>
-    <br>
-    <i>Merci de ta collaboration pour le respect du matériel !</i>
-  </p>
-  <button id="welcomeStart">🚀 Commencer</button>
-</div>
+    <p class="fine-print">Merci de ta collaboration pour le respect du matériel !</p>
+    <button id="welcomeStart">🚀 Commencer</button>
+  </section>
 
-<div class="info-row"><span style="font-size:1.2em;">💻</span><h2 style="margin:0;font-size:1.25em;">Ordinateur <span id="pcId"></span></h2></div>
-<div class="info-row"><span style="font-size:1.2em;">👤</span><span>Utilisateur : <strong id="userId"></strong></span></div>
-
-<!-- Sections -->
-<div id="section-keyboard"  class="section hidden">
-  <h3>⌨️ Clavier</h3>
-  <div class="already-signaled-title">Dégâts déjà signalés :</div>
-  <ul id="list-keyboard"></ul>
-  <button data-sec="keyboard" data-nothing>Rien à signaler ⏩︎</button>
-  <button data-sec="keyboard" data-new>Signaler un nouveau dégât</button>
-</div>
-
-<div id="section-mouse"  class="section hidden">
-  <h3>🐭 Souris / Trackpad</h3>
-  <div class="already-signaled-title">Dégâts déjà signalés :</div>
-  <ul id="list-mouse"></ul>
-  <button data-sec="mouse" data-nothing>Rien à signaler ⏩︎</button>
-  <button data-sec="mouse" data-new>Signaler un nouveau dégât</button>
-  <button data-back>⏪︎ Précédent</button>
-</div>
-
-<div id="section-screen"  class="section hidden">
-  <h3>🖥️ Écran</h3>
-  <div class="already-signaled-title">Dégâts déjà signalés :</div>
-  <ul id="list-screen"></ul>
-  <button data-sec="screen" data-nothing>Rien à signaler ⏩︎</button>
-  <button data-sec="screen" data-new>Signaler un nouveau dégât</button>
-  <button data-back>⏪︎ Précédent</button>
-</div>
-
-<div id="section-headphones" class="section section-wide hidden">
-  <h3>🎧 Écouteurs</h3>
-  <div class="already-signaled-title">Dégâts déjà signalés :</div>
-  <ul id="list-headphones"></ul>
-
-  <label style="margin-top:1.2em; display:block; font-weight:600;">
-    J'utilise une paire d'écouteurs :
-  </label>
-  <div style="margin:0.6em 0 1em 0;display:flex;gap:2em;">
-    <label><input type="radio" name="headphoneUse" value="oui" /> Oui</label>
-    <label><input type="radio" name="headphoneUse" value="non" /> Non</label>
+  <div class="info-grid">
+    <div class="info-row">
+      <span class="info-icon">💻</span>
+      <div class="info-meta">
+        <span>Ordinateur</span>
+        <strong id="pcId"></strong>
+      </div>
+    </div>
+    <div class="info-row">
+      <span class="info-icon">👤</span>
+      <div class="info-meta">
+        <span>Utilisateur</span>
+        <strong id="userId"></strong>
+      </div>
+    </div>
   </div>
 
-  <div id="headphone-details" class="hidden" style="margin-bottom:1.2em;">
-    <label for="headphoneNumber" style="font-weight:500;">
-      Numéro de la paire d'écouteurs :
+  <!-- Sections -->
+  <div id="section-keyboard"  class="section hidden">
+    <h3>⌨️ Clavier</h3>
+    <div class="already-signaled-title">Dégâts déjà signalés :</div>
+    <ul id="list-keyboard"></ul>
+    <button data-sec="keyboard" data-nothing>Rien à signaler ⏩︎</button>
+    <button data-sec="keyboard" data-new>Signaler un nouveau dégât</button>
+  </div>
+
+  <div id="section-mouse"  class="section hidden">
+    <h3>🐭 Souris / Trackpad</h3>
+    <div class="already-signaled-title">Dégâts déjà signalés :</div>
+    <ul id="list-mouse"></ul>
+    <button data-sec="mouse" data-nothing>Rien à signaler ⏩︎</button>
+    <button data-sec="mouse" data-new>Signaler un nouveau dégât</button>
+    <button data-back>⏪︎ Précédent</button>
+  </div>
+
+  <div id="section-screen"  class="section hidden">
+    <h3>🖥️ Écran</h3>
+    <div class="already-signaled-title">Dégâts déjà signalés :</div>
+    <ul id="list-screen"></ul>
+    <button data-sec="screen" data-nothing>Rien à signaler ⏩︎</button>
+    <button data-sec="screen" data-new>Signaler un nouveau dégât</button>
+    <button data-back>⏪︎ Précédent</button>
+  </div>
+
+  <div id="section-headphones" class="section section-wide hidden">
+    <h3>🎧 Écouteurs</h3>
+    <div class="already-signaled-title">Dégâts déjà signalés :</div>
+    <ul id="list-headphones"></ul>
+
+    <label>
+      J'utilise une paire d'écouteurs :
     </label>
-    <input type="text" id="headphoneNumber" placeholder="Ex : 17" style="margin-left:0.7em;max-width:110px;" />
-    <button id="newHeadphoneDamage" style="margin-left:1.3em;">Signaler un nouveau dégât</button>
-    <button id="noHeadphoneDamage" style="margin-left:0.7em;">Aucun dégât ✔︎</button>
+    <div class="radio-group">
+      <label><input type="radio" name="headphoneUse" value="oui" /> Oui</label>
+      <label><input type="radio" name="headphoneUse" value="non" /> Non</label>
+    </div>
+
+    <div id="headphone-details" class="hidden">
+      <label for="headphoneNumber">
+        Numéro de la paire d'écouteurs :
+      </label>
+      <div class="headphone-actions">
+        <input type="text" id="headphoneNumber" placeholder="Ex : 17" />
+        <button id="newHeadphoneDamage">Signaler un nouveau dégât</button>
+        <button id="noHeadphoneDamage">Aucun dégât ✔︎</button>
+      </div>
+    </div>
+    <button id="btnNoHeadphone" class="hidden">Rien à signaler ⏩︎</button>
+    <button data-back>⏪︎ Précédent</button>
   </div>
-  <button id="btnNoHeadphone" class="hidden" style="margin-top:1em;">Rien à signaler ⏩︎</button>
-  <button data-back>⏪︎ Précédent</button>
-</div>
 
+  <div id="section-other"  class="section section-wide hidden">
+    <h3>🛠️ Autres</h3>
+    <div class="already-signaled-title">Dégâts déjà signalés :</div>
+    <ul id="list-other"></ul>
+    <button data-sec="other" data-nothing>Rien à signaler et terminer la vérification ✔︎</button>
+    <button data-sec="other" data-new>Signaler un nouveau dégât</button>
+    <button data-back>⏪︎ Précédent</button>
+  </div>
 
-<div id="section-other"  class="section section-wide hidden">
-  <h3>🛠️ Autres</h3>
-  <div class="already-signaled-title">Dégâts déjà signalés :</div>
-  <ul id="list-other"></ul>
-  <button data-sec="other" data-nothing>Rien à signaler et terminer la vérification ✔︎</button>
-  <button data-sec="other" data-new>Signaler un nouveau dégât</button>
-  <button data-back>⏪︎ Précédent</button>
-</div>
+  <div id="section-rules" class="section section-wide hidden">
+    <h3>📜 Règles pour l’utilisation des ordinateurs</h3>
+    <ul>
+      <li>👤 Chaque élève utilise <strong>uniquement son poste</strong>. Interdit de toucher à l’ordinateur, au clavier ou à la souris d’un autre élève.</li>
+      <li>💻 Les portables s’utilisent <strong>à plat sur une table</strong>, jamais sur les genoux, et doivent être <strong>fermés</strong> quand on les déplace.</li>
+      <li>🖥️ Les écrans fixes ne doivent pas être déplacés ou tournés.</li>
+      <li>🚫🥤 <strong>Pas de nourriture ni de boissons</strong> dans la salle d’informatique.</li>
+      <li>⚙️ Aucun <strong>téléchargement</strong> ni <strong>installation</strong> de logiciel n’est autorisé.</li>
+      <li>🌐 Internet doit être utilisé <strong>de manière appropriée</strong> pour un usage scolaire.</li>
+      <li>📚 De manière générale, il n’est pas permis de faire autre chose que ce qui a été demandé par l’enseignant.</li>
+    </ul>
+    <label>
+      <input type="checkbox" id="rulesAgree" /> ✅ J’accepte ces règles et comprends que je m’expose à des sanctions si j’y contreviens.
+    </label>
+    <button id="rulesFinish" class="hidden">Terminer ✔︎</button>
+    <button data-back>⏪︎ Précédent</button>
+  </div>
 
-<div id="section-rules" class="section section-wide hidden">
-  <h3>📜 Règles pour l’utilisation des ordinateurs</h3>
-  <ul>
-    <li>👤 Chaque élève utilise <strong>uniquement son poste</strong>. Interdit de toucher à l’ordinateur, au clavier ou à la souris d’un autre élève.</li>
-    <li>💻 Les portables s’utilisent <strong>à plat sur une table</strong>, jamais sur les genoux, et doivent être <strong>fermés</strong> quand on les déplace.</li>
-    <li>🖥️ Les écrans fixes ne doivent pas être déplacés ou tournés.</li>
-    <li>🚫🥤 <strong>Pas de nourriture ni de boissons</strong> dans la salle d’informatique.</li>
-    <li>⚙️ Aucun <strong>téléchargement</strong> ni <strong>installation</strong> de logiciel n’est autorisé.</li>
-    <li>🌐 Internet doit être utilisé <strong>de manière appropriée</strong> pour un usage scolaire.</li>
-    <li>📚 De manière générale, il n’est pas permis de faire autre chose que ce qui a été demandé par l’enseignant.</li>
-  </ul>
-  <label style="display:block; margin-top:1.2em; font-weight:600;">
-    <input type="checkbox" id="rulesAgree" /> ✅ J’accepte ces règles et comprends que je m’expose à des sanctions si j’y contreviens.
-  </label>
-  <button id="rulesFinish" class="hidden" style="margin-top:1.5em;">Terminer ✔︎</button>
-  <button data-back>⏪︎ Précédent</button>
-</div>
+</main>
 
 <!-- Dialogue nouveau dégât -->
 <div id="modal" class="hidden">
-  <h4 id="modal-title"></h4>
-  <input type="text" id="damageDesc" placeholder="Décris le dégât…" />
-  <div class="modal-btns">
-    <button id="cancel">Annuler</button>
-    <button id="save">Enregistrer</button>
+  <div class="dialog-card">
+    <h4 id="modal-title"></h4>
+    <input type="text" id="damageDesc" placeholder="Décris le dégât…" />
+    <div class="modal-btns">
+      <button id="cancel">Annuler</button>
+      <button id="save">Enregistrer</button>
+    </div>
   </div>
 </div>
 
 <!-- Validation professeur -->
 <div id="pwdModal" class="hidden">
-  <h4>🛡️ Nouveaux dégâts signalés</h4>
-  <ul id="newList"></ul>
-  <input type="password" id="pwdInput" placeholder="🔑 Mot de passe professeur" />
-  <button id="pwdCancel">Annuler</button>
-  <button id="pwdOk">Valider</button>
+  <div class="dialog-card">
+    <h4>🛡️ Nouveaux dégâts signalés</h4>
+    <ul id="newList"></ul>
+    <input type="password" id="pwdInput" placeholder="🔑 Mot de passe professeur" />
+    <div class="modal-btns">
+      <button id="pwdCancel">Annuler</button>
+      <button id="pwdOk">Valider</button>
+    </div>
+  </div>
 </div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const attention = document.getElementById('attentionModal');
+    const closeBtn = document.getElementById('attentionClose');
+    if (!attention || !closeBtn) return;
+
+    const closeModal = () => attention.classList.add('hidden');
+    closeBtn.addEventListener('click', closeModal);
+    attention.addEventListener('click', (event) => {
+      if (event.target === attention) {
+        closeModal();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !attention.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+  });
+</script>
 
 <script type="module" src="student.js"></script>
 </body>
