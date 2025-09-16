@@ -37,7 +37,7 @@ import {
   doc, getDoc, setDoc, updateDoc, arrayUnion, addDoc, collection, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const attentionEmojis = ["⚠️","🚨","❗","👀","📍","🔎","🛑","💥","✨","🔧"];
+const attentionEmojis = ["🧚‍♂️","🧜‍♀️","🏄‍♂️","👀","🐷","🔎","🦊","💥","✨","🐔","🦄","🍓","🍿","🍤","🏖️","🪂","🧙"];
 function randomAttentionEmoji(){
   return attentionEmojis[Math.floor(Math.random()*attentionEmojis.length)];
 }
