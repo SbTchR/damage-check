@@ -688,6 +688,7 @@ async function showGlobalView() {
     const data = pcSnap.data() ?? {};
     const issues = [];
     SECTION_ORDER.forEach(section => {
+      if (section === "headphones") return;
       const arr = Array.isArray(data[section]) ? data[section] : [];
       arr.forEach(desc => {
         if (isNothingDamage(section, desc)) return;
@@ -713,6 +714,7 @@ async function showGlobalView() {
       return (b.whenTs - a.whenTs);
     });
     const categorised = SECTION_ORDER
+      .filter(section => section !== "headphones")
       .map(section => ({ section, items: issues.filter(it => it.section === section) }))
       .filter(cat => cat.items.length);
     cards.push({ pcId, issues, categorised });
@@ -729,8 +731,9 @@ async function showGlobalView() {
     const header = document.createElement("header");
     const title = document.createElement("h3");
     title.textContent = `PC ${card.pcId}`;
+    const damageCount = card.categorised.reduce((acc, cat) => acc + cat.items.length, 0);
     const count = document.createElement("span");
-    count.textContent = card.issues.length ? `${card.issues.length} dégât(s)` : "RAS";
+    count.textContent = damageCount ? `${damageCount} dégât(s)` : "RAS";
     header.appendChild(title);
     header.appendChild(count);
     article.appendChild(header);
@@ -741,7 +744,7 @@ async function showGlobalView() {
       empty.textContent = "Aucun dégât en attente.";
       article.appendChild(empty);
     } else {
-      totalIssues += card.categorised.reduce((acc, cat) => acc + cat.items.length, 0);
+      totalIssues += damageCount;
       const sectionWrap = document.createElement("div");
       sectionWrap.className = "issue-sections";
       card.categorised.forEach(cat => {
