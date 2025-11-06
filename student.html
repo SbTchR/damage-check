@@ -278,6 +278,11 @@ p {
   color: #ff2d4f !important;
   font-weight: 800;
 }
+
+.important-black {
+  font-size: clamp(1.8rem, 2vw, 3rem)
+}
+
 .welcome-points {
   margin: 0;
   gap: 0.9rem;
@@ -620,8 +625,8 @@ label {
     <ul>
       <li>❗ <span class="important-red">Avant</span> d’utiliser cet ordinateur, <span class="important-red">tu dois</span> remplir ce questionnaire.</li>
       <li>⚠️ Ne <span class="important-red">quitte pas</span> cette page avant d’avoir terminé le questionnaire.</li>
-      <li>🔄 Si le dégât a <span class="important-red">DÉJA </span>été signalé, ne le déclare <span class="important-red">PAS</span></b>  une 2e fois.</li>
-      <li>🚫 Ne signale <span class="important-red">PAS</span> les traces minimes 
+      <li><span class="important-black">🔄 Sile dégât a <span class="important-red">DÉJA </span>été signalé, ne le déclare <span class="important-red">PAS</span></b>  une 2e fois.</span></li>
+      <li><span class="important-black">🚫 Ne signale <span class="important-red">PAS</span> les traces minimes </span> 
         <br><h6>(petits traits de stylo, usure, toutes petites rayures, poussière, etc.).</h6></li>
     </ul>
     <button id="attentionClose">J’ai compris</button>
