@@ -29,6 +29,7 @@ const globalGrid        = document.getElementById("globalGrid");
 const globalEmpty       = document.getElementById("globalEmpty");
 const sessionGrid       = document.getElementById("sessionGrid");
 const sessionEmpty      = document.getElementById("sessionEmpty");
+const sessionSummaryText = sessionView?.querySelector(".global-summary p") || null;
 
 const tabButtons = [tabPc, tabGlobal, tabHeadphones, tabSessions];
 const tabPanels  = { dash, globalView, headphoneView, sessionView };
@@ -85,11 +86,18 @@ let sessionCache = []; // array of {pcId,user,startedAt,lastSeen,items}
 let unsubReports = null;
 let unsubUnres   = null;
 let unsubSessions = null;
-const SESSION_STALE_SECONDS = 60;
+const SESSION_STALE_SECONDS = 15 * 60;
 const SESSION_STALE_MS = SESSION_STALE_SECONDS * 1000;
 const SESSION_STALE_LABEL = SESSION_STALE_SECONDS >= 60
   ? `${Math.round(SESSION_STALE_SECONDS / 60)} min`
   : `${SESSION_STALE_SECONDS} s`;
+
+if (sessionSummaryText) {
+  sessionSummaryText.textContent = `Affiche les formulaires sans validation depuis plus de ${SESSION_STALE_LABEL}. Clique sur une session pour voir le détail.`;
+}
+if (sessionEmpty) {
+  sessionEmpty.textContent = `Aucune session non validée depuis plus de ${SESSION_STALE_LABEL}.`;
+}
 
 // Helper to detect headphone damage objects
 function isHeadphoneDamage(val) { 
@@ -98,6 +106,13 @@ function isHeadphoneDamage(val) {
 
 function normalizeText(s){
   return String(s).trim().toLowerCase().replace(/\s+/g," ");
+}
+
+function parseHeadphoneText(text) {
+  const raw = String(text ?? "").trim();
+  const match = raw.match(/n[°ºo]\s*(\d+)\s*[:\-–]\s*(.+)/i);
+  if (!match) return null;
+  return { numero: match[1], description: match[2].trim() };
 }
 
 // Helper to compare headphone damage objects by description and number
@@ -131,7 +146,10 @@ function isNotImportantDamage(section, val) {
 
 function toHeadphoneObj(val) {
   if (typeof val === "object" && val) return { ...val };
-  return { numero: "", description: String(val ?? "") };
+  const text = String(val ?? "");
+  const parsed = parseHeadphoneText(text);
+  if (parsed) return parsed;
+  return { numero: "", description: text };
 }
 
 function matchesDamage(section, stored, target) {
@@ -175,18 +193,34 @@ function comparePcIds(a, b) {
 
 function keyForDamage(section, desc) {
   if (!section) return null;
-  if (section === "headphones" && isHeadphoneDamage(desc)) {
-    return `${section}|${normalizeText(desc.numero)}|${normalizeText(desc.description ?? desc.desc ?? "")}`;
+  if (section === "headphones") {
+    if (isHeadphoneDamage(desc)) {
+      return `${section}|${normalizeText(desc.numero)}|${normalizeText(desc.description ?? desc.desc ?? "")}`;
+    }
+    const text = extractDamageText(section, desc);
+    const parsed = parseHeadphoneText(text);
+    if (parsed) {
+      return `${section}|${normalizeText(parsed.numero)}|${normalizeText(parsed.description)}`;
+    }
+    return `${section}|${normalizeText(text)}`;
   }
   const text = extractDamageText(section, desc);
   return `${section}|${normalizeText(text)}`;
 }
 
 function formatDesc(section, desc) {
-  if (section === "headphones" && isHeadphoneDamage(desc)) {
-    const numero = desc.numero ?? "?";
-    const text = desc.description ?? desc.desc ?? "";
-    return `#${numero} – ${text}`;
+  if (section === "headphones") {
+    if (isHeadphoneDamage(desc)) {
+      const numero = desc.numero ?? "?";
+      const text = desc.description ?? desc.desc ?? "";
+      return `#${numero} – ${text}`;
+    }
+    const text = extractDamageText(section, desc);
+    const parsed = parseHeadphoneText(text);
+    if (parsed) {
+      return `#${parsed.numero} – ${parsed.description}`;
+    }
+    return text;
   }
   return extractDamageText(section, desc);
 }
@@ -203,6 +237,43 @@ function isNothingDamage(section, desc) {
     return normalizeText(text) === "rien";
   }
   return false;
+}
+
+function timestampToMs(value) {
+  if (!value) return 0;
+  if (typeof value === "object") {
+    if (typeof value.seconds === "number") return value.seconds * 1000;
+    if (typeof value.toDate === "function") {
+      const date = value.toDate();
+      return date instanceof Date ? date.getTime() : 0;
+    }
+  }
+  if (typeof value === "number") {
+    return value < 1e12 ? value * 1000 : value;
+  }
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+}
+
+function getReportWhenTs(report) {
+  return timestampToMs(report?.when) ||
+         timestampToMs(report?.date) ||
+         timestampToMs(report?.createdAt) ||
+         timestampToMs(report?.timestamp) ||
+         0;
+}
+
+function getReportWhenStr(report) {
+  const ts = getReportWhenTs(report);
+  return ts ? new Date(ts).toLocaleString() : "";
+}
+
+function getReportUser(report) {
+  const user = report?.user ?? report?.userId ?? report?.username ?? report?.utilisateur ?? report?.eleve ?? "";
+  return user ? String(user) : "";
 }
 
 function timestampToDate(ts) {
@@ -385,7 +456,7 @@ function subscribeToPc(pc){
         d._id = ds.id;           // keep the doc id for later deletion
         reportCache.push(d);
       });
-      reportCache.sort((a,b)=> (b.when?.seconds || 0) - (a.when?.seconds || 0));
+      reportCache.sort((a,b)=> getReportWhenTs(b) - getReportWhenTs(a));
       drawTable();
   });
 }
@@ -404,10 +475,9 @@ async function drawTable() {
 
   const latestMap = new Map();
   reportCache.forEach(r => {
-    const when = r.when ? new Date(r.when.seconds * 1000) : null;
-    const whenTs = when ? when.getTime() : 0;
-    const whenStr = when ? when.toLocaleString() : "";
-    const userStr = r.user ?? "";
+    const whenTs = getReportWhenTs(r);
+    const whenStr = getReportWhenStr(r);
+    const userStr = getReportUser(r);
     const items = Array.isArray(r.items) ? r.items : [];
     items.forEach(item => {
       const key = keyForDamage(item.section, item.desc);
@@ -882,10 +952,9 @@ async function showGlobalView() {
     const r = ds.data();
     const pc = r.pcId;
     if (!pc) return;
-    const when = r.when ? new Date(r.when.seconds * 1000) : null;
-    const whenTs = when ? when.getTime() : 0;
-    const whenStr = when ? when.toLocaleString() : "";
-    const user = r.user ?? "";
+    const whenTs = getReportWhenTs(r);
+    const whenStr = getReportWhenStr(r);
+    const user = getReportUser(r);
     const items = Array.isArray(r.items) ? r.items : [];
     if (!latestByPc.has(pc)) latestByPc.set(pc, new Map());
     const map = latestByPc.get(pc);
@@ -1044,10 +1113,9 @@ async function fetchHeadphoneIssues() {
     const r = ds.data();
     const pcId = r.pcId;
     if (!pcId) return;
-    const when = r.when ? new Date(r.when.seconds * 1000) : null;
-    const whenTs = when ? when.getTime() : 0;
-    const whenStr = when ? when.toLocaleString() : "";
-    const user = r.user ?? "";
+    const whenTs = getReportWhenTs(r);
+    const whenStr = getReportWhenStr(r);
+    const user = getReportUser(r);
     const items = Array.isArray(r.items) ? r.items : [];
     items.forEach(item => {
       if (item.section !== "headphones") return;

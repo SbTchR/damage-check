@@ -124,6 +124,8 @@ const pwdCancel = document.getElementById("pwdCancel");
 const PROF_PWD  = "0dga";
 
 let sessionRef = null;
+let sessionHeartbeatId = null;
+const SESSION_HEARTBEAT_MS = 30000;
 
 async function startSession(){
   try {
@@ -142,6 +144,19 @@ async function startSession(){
   }
 }
 
+function startSessionHeartbeat(){
+  if (sessionHeartbeatId) return;
+  sessionHeartbeatId = setInterval(() => {
+    void touchSession();
+  }, SESSION_HEARTBEAT_MS);
+}
+
+function stopSessionHeartbeat(){
+  if (!sessionHeartbeatId) return;
+  clearInterval(sessionHeartbeatId);
+  sessionHeartbeatId = null;
+}
+
 async function touchSession(extra = {}){
   if (!sessionRef) return;
   try {
@@ -152,6 +167,7 @@ async function touchSession(extra = {}){
 }
 
 await startSession();
+startSessionHeartbeat();
 
 /* ------ Récupérer dégâts non résolus ------ */
 const pcRef = doc(db, "computers", pcId);
@@ -712,6 +728,7 @@ function syncSessionItems(){
   async function sendReports(){
       // Marquer immédiatement la soumission pour désactiver beforeunload
       isSubmitted = true;
+      stopSessionHeartbeat();
       window.removeEventListener("beforeunload", blockUnload);
       window.onbeforeunload = null;               // supprime tout handler résiduel
 
