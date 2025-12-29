@@ -488,7 +488,6 @@ async function drawTable() {
         latestMap.set(key, {
           section: item.section,
           desc: item.desc,
-          when,
           whenTs,
           whenStr,
           user: userStr,
