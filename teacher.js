@@ -85,7 +85,7 @@ let sessionCache = []; // array of {pcId,user,startedAt,lastSeen,items}
 let unsubReports = null;
 let unsubUnres   = null;
 let unsubSessions = null;
-const SESSION_STALE_MINUTES = 0.3;
+const SESSION_STALE_MINUTES = 1;
 const SESSION_STALE_MS = SESSION_STALE_MINUTES * 60 * 1000;
 
 // Helper to detect headphone damage objects
