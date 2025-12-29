@@ -261,6 +261,78 @@ body {
   gap: 1.4rem;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
+.session-grid {
+  display: grid;
+  gap: 1.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.session-card {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.session-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(15, 79, 255, 0.16);
+  pointer-events: none;
+}
+.session-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+.session-card header h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: var(--blue-700);
+}
+.session-user {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.98rem;
+  color: var(--grey-600);
+}
+.session-meta {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.98rem;
+  color: var(--grey-600);
+}
+.session-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.session-meta-label {
+  font-weight: 600;
+}
+.session-meta-value {
+  color: var(--grey-900);
+  font-weight: 600;
+}
+.session-detail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+.session-detail li {
+  background: rgba(15, 79, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  font-size: 1.02rem;
+  line-height: 1.35;
+}
 .pc-card {
   position: relative;
   background: var(--card);
@@ -456,6 +528,7 @@ body {
     <button id="tabPc" class="tab-btn active" data-target="dash">Vue par ordinateur</button>
     <button id="tabGlobal" class="tab-btn" data-target="globalView">Vue d'ensemble</button>
     <button id="tabHeadphones" class="tab-btn" data-target="headphoneView">Écouteurs</button>
+    <button id="tabSessions" class="tab-btn" data-target="sessionView">Sessions non validées</button>
   </nav>
 
   <section id="dash" class="tab-panel active">
@@ -517,6 +590,15 @@ body {
     </div>
     <div class="headphone-grid" id="headphoneGrid"></div>
     <div class="empty-state hidden" id="headphoneEmpty">Aucun signalement d'écouteurs pour le moment.</div>
+  </section>
+
+  <section id="sessionView" class="tab-panel">
+    <div class="global-summary">
+      <h2>Sessions non validées</h2>
+      <p>Affiche les formulaires sans validation depuis plus de 30 minutes, avec le détail saisi.</p>
+    </div>
+    <div id="sessionGrid" class="session-grid"></div>
+    <div class="empty-state hidden" id="sessionEmpty">Aucune session non validée depuis plus de 30 minutes.</div>
   </section>
 </div>
 

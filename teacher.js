@@ -11,9 +11,11 @@ import {
 const dash              = document.getElementById("dash");
 const globalView        = document.getElementById("globalView");
 const headphoneView     = document.getElementById("headphoneView");
+const sessionView       = document.getElementById("sessionView");
 const tabPc             = document.getElementById("tabPc");
 const tabGlobal         = document.getElementById("tabGlobal");
 const tabHeadphones     = document.getElementById("tabHeadphones");
+const tabSessions       = document.getElementById("tabSessions");
 const pcSelect          = document.getElementById("pcSelect");
 const onlyDamages       = document.getElementById("onlyDamages");
 const onlyUnresToggleEl = document.getElementById("onlyUnres");
@@ -25,9 +27,11 @@ const tbody             = document.getElementById("tbody");
 const pcEmpty           = document.getElementById("pcEmpty");
 const globalGrid        = document.getElementById("globalGrid");
 const globalEmpty       = document.getElementById("globalEmpty");
+const sessionGrid       = document.getElementById("sessionGrid");
+const sessionEmpty      = document.getElementById("sessionEmpty");
 
-const tabButtons = [tabPc, tabGlobal, tabHeadphones];
-const tabPanels  = { dash, globalView, headphoneView };
+const tabButtons = [tabPc, tabGlobal, tabHeadphones, tabSessions];
+const tabPanels  = { dash, globalView, headphoneView, sessionView };
 
 function activateTab(targetId) {
   try {
@@ -61,17 +65,28 @@ async function showHeadphonesView() {
   await renderHeadphones();
 }
 
+function showSessionsView() {
+  activateTab("sessionView");
+  window.location.hash = "#sessions";
+  renderSessions();
+}
+
 // Wire up the main tabs
 tabPc.onclick = showPcView;
 tabGlobal.onclick = showGlobalViewTab;
 tabHeadphones.onclick = showHeadphonesView;
+tabSessions.onclick = showSessionsView;
 
 let currentPC   = null;
 let currentHeadphoneDetail = "";
 let unresolved  = {keyboard:[],mouse:[],screen:[],headphones:[],other:[]};
 let reportCache = []; // array of {when,user,items}
+let sessionCache = []; // array of {pcId,user,startedAt,lastSeen,items}
 let unsubReports = null;
 let unsubUnres   = null;
+let unsubSessions = null;
+const SESSION_STALE_MINUTES = 30;
+const SESSION_STALE_MS = SESSION_STALE_MINUTES * 60 * 1000;
 
 // Helper to detect headphone damage objects
 function isHeadphoneDamage(val) { 
@@ -187,6 +202,62 @@ function isNothingDamage(section, desc) {
   return false;
 }
 
+function timestampToDate(ts) {
+  return ts && typeof ts.seconds === "number" ? new Date(ts.seconds * 1000) : null;
+}
+
+function formatTimestamp(ts) {
+  const date = timestampToDate(ts);
+  return date ? date.toLocaleString() : "—";
+}
+
+function sessionLastSeenMs(session) {
+  const lastSeen = timestampToDate(session?.lastSeen);
+  if (lastSeen) return lastSeen.getTime();
+  const started = timestampToDate(session?.startedAt);
+  return started ? started.getTime() : 0;
+}
+
+function labelStep(step) {
+  const cleaned = String(step ?? "").replace(/^section-/, "");
+  const map = {
+    welcome: "Accueil",
+    keyboard: "Clavier",
+    mouse: "Souris",
+    screen: "Écran",
+    headphones: "Écouteurs",
+    other: "Autres",
+    rules: "Règles"
+  };
+  return map[cleaned] || cleaned || "—";
+}
+
+function isSessionDamageItem(item) {
+  if (!item || !item.section) return false;
+  if (item.section === "none") return false;
+  const text = extractDamageText(item.section, item.desc);
+  if (!normalizeText(text)) return false;
+  if (item.section === "headphones") {
+    const normalized = normalizeText(text);
+    return !normalized.includes("aucun dégât") && !normalized.includes("aucun degat");
+  }
+  return true;
+}
+
+function appendSessionMeta(container, labelText, valueText) {
+  const row = document.createElement("div");
+  row.className = "session-meta-row";
+  const label = document.createElement("span");
+  label.className = "session-meta-label";
+  label.textContent = `${labelText} :`;
+  const value = document.createElement("span");
+  value.className = "session-meta-value";
+  value.textContent = valueText || "—";
+  row.appendChild(label);
+  row.appendChild(value);
+  container.appendChild(row);
+}
+
 // Helper to remove an item from a report (by id), or delete the report if now empty
 async function removeFromReport(repId, section, desc){
   const repRef = doc(db,"reports",repId);
@@ -259,6 +330,7 @@ async function initDashboard(){
   });
   headphoneSelect?.addEventListener("change", () => renderHeadphones());
   await refreshHeadphoneOptions();
+  subscribeSessions();
 }
 
 function subscribeToPc(pc){
@@ -440,6 +512,99 @@ async function drawTable() {
   if (rows.length === 0) {
     pcEmpty?.classList.remove("hidden");
   }
+}
+
+function subscribeSessions() {
+  if (!sessionGrid || unsubSessions) return;
+  unsubSessions = onSnapshot(collection(db, "report_sessions"), (snap) => {
+    sessionCache = [];
+    snap.forEach(ds => {
+      const data = ds.data();
+      data._id = ds.id;
+      sessionCache.push(data);
+    });
+    renderSessions();
+  }, (err) => {
+    console.warn("subscribeSessions error", err);
+  });
+}
+
+function renderSessions() {
+  if (!sessionGrid) return;
+  sessionGrid.innerHTML = "";
+  sessionEmpty?.classList.add("hidden");
+
+  const now = Date.now();
+  const sessions = sessionCache.filter(session => {
+    const status = session?.status || "in_progress";
+    if (status === "validated") return false;
+    const lastSeenMs = sessionLastSeenMs(session);
+    return !lastSeenMs || (now - lastSeenMs) >= SESSION_STALE_MS;
+  });
+
+  if (!sessions.length) {
+    sessionEmpty?.classList.remove("hidden");
+    return;
+  }
+
+  sessions.sort((a, b) => sessionLastSeenMs(b) - sessionLastSeenMs(a));
+  const frag = document.createDocumentFragment();
+  sessions.forEach(session => {
+    const card = document.createElement("article");
+    card.className = "session-card";
+
+    const header = document.createElement("header");
+    const titleWrap = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = session?.pcId ? `PC ${session.pcId}` : "PC inconnu";
+    const user = document.createElement("span");
+    user.className = "session-user";
+    user.textContent = session?.user ? `Élève : ${session.user}` : "Élève inconnu";
+    titleWrap.appendChild(title);
+    titleWrap.appendChild(user);
+    const statusTag = document.createElement("span");
+    statusTag.className = "tag-status danger";
+    statusTag.textContent = session?.status === "awaiting_validation"
+      ? "Validation non faite (≥ 30 min)"
+      : "Session abandonnée (≥ 30 min)";
+    header.appendChild(titleWrap);
+    header.appendChild(statusTag);
+    card.appendChild(header);
+
+    const meta = document.createElement("div");
+    meta.className = "session-meta";
+    appendSessionMeta(meta, "Démarré", formatTimestamp(session?.startedAt));
+    appendSessionMeta(meta, "Dernière activité", formatTimestamp(session?.lastSeen));
+    appendSessionMeta(meta, "Dernière étape", labelStep(session?.step));
+    appendSessionMeta(meta, "Dégâts saisis", session?.hasRealDamage ? "Oui" : "Non");
+    card.appendChild(meta);
+
+    const items = Array.isArray(session?.items) ? session.items : [];
+    const displayItems = items.filter(isSessionDamageItem);
+    if (!displayItems.length) {
+      const empty = document.createElement("p");
+      empty.className = "card-empty";
+      empty.textContent = session?.hasRealDamage
+        ? "Dégâts saisis mais détail manquant."
+        : "Aucun dégât saisi.";
+      card.appendChild(empty);
+    } else {
+      const list = document.createElement("ul");
+      list.className = "session-detail";
+      displayItems.forEach(item => {
+        const li = document.createElement("li");
+        const descText = item.section === "headphones"
+          ? formatDesc(item.section, item.desc)
+          : extractDamageText(item.section, item.desc);
+        li.textContent = `${label(item.section)} : ${descText}`;
+        list.appendChild(li);
+      });
+      card.appendChild(list);
+    }
+
+    frag.appendChild(card);
+  });
+  sessionGrid.appendChild(frag);
 }
 
 async function drawHeadphoneDetail(numero) {
@@ -1103,6 +1268,8 @@ if (window.location.hash === "#global") {
   showGlobalViewTab();
 } else if (window.location.hash === "#headphones") {
   showHeadphonesView();
+} else if (window.location.hash === "#sessions") {
+  showSessionsView();
 } else {
   showPcView();
 }
