@@ -266,40 +266,37 @@ body {
   gap: 1.4rem;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
-.session-card {
-  position: relative;
-  background: var(--card);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 1.4rem 1.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+.session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
 }
-.session-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid rgba(15, 79, 255, 0.16);
-  pointer-events: none;
+.session-item {
+  background: rgba(15, 79, 255, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.7rem;
 }
-.session-card header {
+.session-item[open] {
+  background: rgba(15, 79, 255, 0.12);
+}
+.session-summary {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.8rem;
-}
-.session-card header h3 {
-  margin: 0;
-  font-size: 1.35rem;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-weight: 600;
   color: var(--blue-700);
 }
-.session-user {
-  display: block;
-  margin-top: 0.2rem;
-  font-size: 0.98rem;
+.session-summary span:last-child {
   color: var(--grey-600);
+  font-weight: 500;
+}
+.session-item-body {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
 }
 .session-meta {
   display: grid;
@@ -332,6 +329,24 @@ body {
   padding: 0.5rem 0.7rem;
   font-size: 1.02rem;
   line-height: 1.35;
+}
+.session-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.session-actions button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+  background: rgba(255, 77, 109, 0.2);
+  color: #a32031;
+  cursor: pointer;
+}
+.session-actions button:hover,
+.session-actions button:focus-visible {
+  background: rgba(255, 77, 109, 0.3);
 }
 .pc-card {
   position: relative;
@@ -595,10 +610,10 @@ body {
   <section id="sessionView" class="tab-panel">
     <div class="global-summary">
       <h2>Sessions non validées</h2>
-      <p>Affiche les formulaires sans validation depuis plus de 30 minutes, avec le détail saisi.</p>
+      <p>Affiche les formulaires sans validation depuis plus d'une minute. Clique sur une session pour voir le détail.</p>
     </div>
     <div id="sessionGrid" class="session-grid"></div>
-    <div class="empty-state hidden" id="sessionEmpty">Aucune session non validée depuis plus de 30 minutes.</div>
+    <div class="empty-state hidden" id="sessionEmpty">Aucune session non validée depuis plus d'une minute.</div>
   </section>
 </div>
 

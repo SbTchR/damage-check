@@ -85,8 +85,11 @@ let sessionCache = []; // array of {pcId,user,startedAt,lastSeen,items}
 let unsubReports = null;
 let unsubUnres   = null;
 let unsubSessions = null;
-const SESSION_STALE_MINUTES = 1;
-const SESSION_STALE_MS = SESSION_STALE_MINUTES * 60 * 1000;
+const SESSION_STALE_SECONDS = 60;
+const SESSION_STALE_MS = SESSION_STALE_SECONDS * 1000;
+const SESSION_STALE_LABEL = SESSION_STALE_SECONDS >= 60
+  ? `${Math.round(SESSION_STALE_SECONDS / 60)} min`
+  : `${SESSION_STALE_SECONDS} s`;
 
 // Helper to detect headphone damage objects
 function isHeadphoneDamage(val) { 
@@ -216,6 +219,18 @@ function sessionLastSeenMs(session) {
   if (lastSeen) return lastSeen.getTime();
   const started = timestampToDate(session?.startedAt);
   return started ? started.getTime() : 0;
+}
+
+function sessionStartMs(session) {
+  const started = timestampToDate(session?.startedAt);
+  if (started) return started.getTime();
+  return sessionLastSeenMs(session);
+}
+
+function formatSessionStart(session) {
+  const started = formatTimestamp(session?.startedAt);
+  if (started !== "—") return started;
+  return formatTimestamp(session?.lastSeen);
 }
 
 function labelStep(step) {
@@ -547,61 +562,106 @@ function renderSessions() {
     return;
   }
 
-  sessions.sort((a, b) => sessionLastSeenMs(b) - sessionLastSeenMs(a));
-  const frag = document.createDocumentFragment();
+  const grouped = new Map();
   sessions.forEach(session => {
+    const key = session?.pcId ? String(session.pcId) : "";
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(session);
+  });
+
+  const pcIds = Array.from(grouped.keys()).sort((a, b) => {
+    if (!a) return 1;
+    if (!b) return -1;
+    return comparePcIds(a, b);
+  });
+
+  const frag = document.createDocumentFragment();
+  pcIds.forEach(pcId => {
     const card = document.createElement("article");
-    card.className = "session-card";
+    card.className = "pc-card session-pc-card";
 
     const header = document.createElement("header");
-    const titleWrap = document.createElement("div");
     const title = document.createElement("h3");
-    title.textContent = session?.pcId ? `PC ${session.pcId}` : "PC inconnu";
-    const user = document.createElement("span");
-    user.className = "session-user";
-    user.textContent = session?.user ? `Élève : ${session.user}` : "Élève inconnu";
-    titleWrap.appendChild(title);
-    titleWrap.appendChild(user);
-    const statusTag = document.createElement("span");
-    statusTag.className = "tag-status danger";
-    statusTag.textContent = session?.status === "awaiting_validation"
-      ? "Validation non faite (≥ 30 min)"
-      : "Session abandonnée (≥ 30 min)";
-    header.appendChild(titleWrap);
-    header.appendChild(statusTag);
+    title.textContent = pcId ? `PC ${pcId}` : "PC inconnu";
+    const count = document.createElement("span");
+    count.textContent = `${grouped.get(pcId).length} session(s)`;
+    header.appendChild(title);
+    header.appendChild(count);
     card.appendChild(header);
 
-    const meta = document.createElement("div");
-    meta.className = "session-meta";
-    appendSessionMeta(meta, "Démarré", formatTimestamp(session?.startedAt));
-    appendSessionMeta(meta, "Dernière activité", formatTimestamp(session?.lastSeen));
-    appendSessionMeta(meta, "Dernière étape", labelStep(session?.step));
-    appendSessionMeta(meta, "Dégâts saisis", session?.hasRealDamage ? "Oui" : "Non");
-    card.appendChild(meta);
+    const list = document.createElement("ul");
+    list.className = "session-list";
+    const sessionsForPc = grouped.get(pcId) || [];
+    sessionsForPc.sort((a, b) => sessionStartMs(a) - sessionStartMs(b));
 
-    const items = Array.isArray(session?.items) ? session.items : [];
-    const displayItems = items.filter(isSessionDamageItem);
-    if (!displayItems.length) {
-      const empty = document.createElement("p");
-      empty.className = "card-empty";
-      empty.textContent = session?.hasRealDamage
-        ? "Dégâts saisis mais détail manquant."
-        : "Aucun dégât saisi.";
-      card.appendChild(empty);
-    } else {
-      const list = document.createElement("ul");
-      list.className = "session-detail";
-      displayItems.forEach(item => {
-        const li = document.createElement("li");
-        const descText = item.section === "headphones"
-          ? formatDesc(item.section, item.desc)
-          : extractDamageText(item.section, item.desc);
-        li.textContent = `${label(item.section)} : ${descText}`;
-        list.appendChild(li);
-      });
-      card.appendChild(list);
-    }
+    sessionsForPc.forEach(session => {
+      const li = document.createElement("li");
+      const details = document.createElement("details");
+      details.className = "session-item";
+      details.dataset.sessionId = session?._id || "";
 
+      const summary = document.createElement("summary");
+      summary.className = "session-summary";
+      const startSpan = document.createElement("span");
+      startSpan.textContent = formatSessionStart(session);
+      const userSpan = document.createElement("span");
+      userSpan.textContent = session?.user || "Élève inconnu";
+      summary.appendChild(startSpan);
+      summary.appendChild(userSpan);
+      details.appendChild(summary);
+
+      const body = document.createElement("div");
+      body.className = "session-item-body";
+      const meta = document.createElement("div");
+      meta.className = "session-meta";
+      appendSessionMeta(meta, "Démarré", formatTimestamp(session?.startedAt));
+      appendSessionMeta(meta, "Dernière activité", formatTimestamp(session?.lastSeen));
+      appendSessionMeta(meta, "Dernière étape", labelStep(session?.step));
+      appendSessionMeta(meta, "Statut", session?.status === "awaiting_validation"
+        ? `Validation non faite (≥ ${SESSION_STALE_LABEL})`
+        : `Session abandonnée (≥ ${SESSION_STALE_LABEL})`);
+      appendSessionMeta(meta, "Dégâts saisis", session?.hasRealDamage ? "Oui" : "Non");
+      body.appendChild(meta);
+
+      const items = Array.isArray(session?.items) ? session.items : [];
+      const displayItems = items.filter(isSessionDamageItem);
+      if (!displayItems.length) {
+        const empty = document.createElement("p");
+        empty.className = "card-empty";
+        empty.textContent = session?.hasRealDamage
+          ? "Dégâts saisis mais détail manquant."
+          : "Aucun dégât saisi.";
+        body.appendChild(empty);
+      } else {
+        const detailList = document.createElement("ul");
+        detailList.className = "session-detail";
+        displayItems.forEach(item => {
+          const detailItem = document.createElement("li");
+          const descText = item.section === "headphones"
+            ? formatDesc(item.section, item.desc)
+            : extractDamageText(item.section, item.desc);
+          detailItem.textContent = `${label(item.section)} : ${descText}`;
+          detailList.appendChild(detailItem);
+        });
+        body.appendChild(detailList);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "session-actions";
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.dataset.action = "delete-session";
+      deleteBtn.dataset.sessionId = session?._id || "";
+      deleteBtn.textContent = "Supprimer la session";
+      actions.appendChild(deleteBtn);
+      body.appendChild(actions);
+
+      details.appendChild(body);
+      li.appendChild(details);
+      list.appendChild(li);
+    });
+
+    card.appendChild(list);
     frag.appendChild(card);
   });
   sessionGrid.appendChild(frag);
@@ -1258,6 +1318,15 @@ headphoneGrid?.addEventListener("click", async ev => {
   const btn = ev.target.closest("button");
   if (!btn) return;
   await handleExternalAction(btn);
+});
+
+sessionGrid?.addEventListener("click", async ev => {
+  const btn = ev.target.closest("button");
+  if (!btn || btn.dataset.action !== "delete-session") return;
+  const sessionId = btn.dataset.sessionId;
+  if (!sessionId) return;
+  if (!window.confirm("Supprimer définitivement cette session ?")) return;
+  await deleteDoc(doc(db, "report_sessions", sessionId));
 });
 
 // Expose la fonction globalement pour l'utiliser via des attributs HTML

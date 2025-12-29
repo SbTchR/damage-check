@@ -160,6 +160,78 @@ p {
 .existing-wrapper.hidden {
   display: none;
 }
+.pending-panel {
+  margin-top: 1.8rem;
+  padding: 1.6rem 1.8rem;
+  border-radius: var(--radius-md);
+  background: var(--card-strong);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 1rem;
+}
+.pending-panel h4 {
+  margin: 0;
+  color: var(--blue-700);
+  font-size: clamp(1.7rem, 1.6vw, 2rem);
+}
+.pending-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.8rem;
+}
+.pending-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.8rem;
+  align-items: center;
+}
+.pending-item-text {
+  font-weight: 600;
+  color: var(--grey-900);
+}
+.pending-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.pending-panel .pending-actions button,
+#pwdModal .pending-actions button {
+  margin: 0;
+  font-size: clamp(1.3rem, 1.2vw, 1.55rem);
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: rgba(15, 80, 160, 0.12);
+  color: var(--blue-700);
+  box-shadow: none;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.pending-panel .pending-actions button:hover,
+.pending-panel .pending-actions button:focus-visible,
+#pwdModal .pending-actions button:hover,
+#pwdModal .pending-actions button:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(15, 80, 160, 0.2);
+}
+.pending-panel .pending-actions button[data-action="remove"],
+#pwdModal .pending-actions button[data-action="remove"] {
+  background: rgba(255, 77, 109, 0.16);
+  color: #c62839;
+}
+.pending-panel .pending-actions button[data-action="remove"]:hover,
+.pending-panel .pending-actions button[data-action="remove"]:focus-visible,
+#pwdModal .pending-actions button[data-action="remove"]:hover,
+#pwdModal .pending-actions button[data-action="remove"]:focus-visible {
+  background: rgba(255, 77, 109, 0.24);
+}
+.pending-empty {
+  color: var(--grey-600);
+  font-style: italic;
+}
 .section button,
 #modal button,
 #pwdModal button,
