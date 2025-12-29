@@ -355,7 +355,7 @@ function syncSessionItems(){
       pwdInput.disabled = !needPwd;
       if (!needPwd) pwdInput.value = "";
       pwdInput.placeholder = needPwd
-        ? "🔑 Mot de passe prof (indice : aucun dégat f0netik)"
+        ? "🔑 Mot de passe prof (☝️ : 0 dégat f0netik 4*)"
         : "Aucun mot de passe nécessaire";
     }
     pwdOk.textContent = needPwd ? "Valider" : "Valider sans mot de passe";
