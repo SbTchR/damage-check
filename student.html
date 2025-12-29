@@ -379,27 +379,48 @@ p {
   display: flex;
   align-items: center;
   gap: 1.2rem;
-  padding: 2rem 2.2rem;
+  padding: 1.2rem 1.6rem;
   border-radius: var(--radius-md);
-  background: var(--card-strong);
-  box-shadow: var(--shadow-sm);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(20, 95, 200, 0.12);
+  box-shadow: none;
 }
 .info-icon {
-  font-size: 2.6rem;
+  font-size: 2.1rem;
 }
 .info-meta span {
   display: block;
   color: var(--grey-600);
-  font-size: clamp(1.55rem, 1.5vw, 1.75rem);
+  font-size: clamp(1.35rem, 1.3vw, 1.6rem);
   margin-bottom: 0.2rem;
 }
 .info-meta strong {
-  font-size: clamp(2rem, 1.9vw, 2.3rem);
+  font-size: clamp(1.6rem, 1.5vw, 1.9rem);
 }
 #pcId, #userId {
   color: var(--blue-700);
   font-weight: 700;
-  font-size: clamp(1.85rem, 1.7vw, 2.1rem);
+  font-size: clamp(1.55rem, 1.5vw, 1.85rem);
+}
+.exit-warning {
+  margin-top: 1.2rem;
+  padding: 1.2rem 1.6rem;
+  border-radius: var(--radius-md);
+  border: 2px solid #ff2d4f;
+  background: linear-gradient(120deg, rgba(255, 45, 79, 0.16), rgba(255, 138, 103, 0.18));
+  color: #b31833;
+  font-weight: 800;
+  font-size: clamp(1.85rem, 1.85vw, 2.3rem);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 16px 28px rgba(255, 45, 79, 0.18);
+}
+.exit-warning-icon {
+  font-size: 2.4rem;
+}
+.exit-warning-text {
+  line-height: 1.5;
 }
 label {
   font-size: clamp(1.7rem, 1.6vw, 1.9rem);
@@ -631,6 +652,11 @@ label {
     padding: 2rem;
     gap: 1.6rem;
   }
+  .exit-warning {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+  }
   .big-important {
     padding: 1.4rem 1.5rem;
   }
@@ -731,6 +757,10 @@ label {
         <strong id="userId"></strong>
       </div>
     </div>
+  </div>
+  <div class="exit-warning" role="note" aria-live="polite">
+    <span class="exit-warning-icon">⚠️</span>
+    <span class="exit-warning-text">Ne quitte pas cette page avant d'avoir complété le formulaire entièrement&nbsp;!</span>
   </div>
 
   <!-- Sections -->
