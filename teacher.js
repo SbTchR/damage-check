@@ -10,10 +10,12 @@ const dash = $("dash");
 const globalView = $("globalView");
 const headphoneView = $("headphoneView");
 const sessionView = $("sessionView");
+const followupView = $("followupView");
 const tabPc = $("tabPc");
 const tabGlobal = $("tabGlobal");
 const tabHeadphones = $("tabHeadphones");
 const tabSessions = $("tabSessions");
+const tabFollowup = $("tabFollowup");
 
 const pcSelect = $("pcSelect");
 const pcHeadphoneSelect = $("pcHeadphoneSelect");
@@ -22,6 +24,7 @@ const pcSort = $("pcSort");
 const onlyDamages = $("onlyDamages");
 const onlyUnresToggleEl = $("onlyUnres");
 const pcResultCount = $("pcResultCount");
+const deleteComputerButton = $("deleteComputer");
 const tbody = $("tbody");
 const pcEmpty = $("pcEmpty");
 
@@ -50,6 +53,8 @@ const headphoneResultCount = $("headphoneResultCount");
 
 const sessionDateFrom = $("sessionDateFrom");
 const sessionDateTo = $("sessionDateTo");
+const sessionMinCount = $("sessionMinCount");
+const studentSessionSort = $("studentSessionSort");
 const sessionPcFilter = $("sessionPcFilter");
 const sessionUserSearch = $("sessionUserSearch");
 const sessionHasDamage = $("sessionHasDamage");
@@ -60,18 +65,32 @@ const sessionSelectFiltered = $("sessionSelectFiltered");
 const sessionSelectionCount = $("sessionSelectionCount");
 const sessionDeleteSelected = $("sessionDeleteSelected");
 const sessionResultCount = $("sessionResultCount");
+const sessionResultLabel = $("sessionResultLabel");
+const sessionSelectPageLabel = $("sessionSelectPageLabel");
 const sessionTableBody = $("sessionTableBody");
+const sessionTableShell = $("sessionTableShell");
 const sessionEmpty = $("sessionEmpty");
 const sessionPagination = $("sessionPagination");
+const studentSessionGroups = $("studentSessionGroups");
+const studentSessionEmpty = $("studentSessionEmpty");
+
+const followupSearch = $("followupSearch");
+const followupSort = $("followupSort");
+const followupReset = $("followupReset");
+const followupResultCount = $("followupResultCount");
+const followupList = $("followupList");
+const followupEmpty = $("followupEmpty");
 const toast = $("toast");
 
-const tabButtons = [tabPc, tabGlobal, tabHeadphones, tabSessions];
-const tabPanels = { dash, globalView, headphoneView, sessionView };
+const tabButtons = [tabPc, tabGlobal, tabHeadphones, tabSessions, tabFollowup];
+const tabPanels = { dash, globalView, headphoneView, sessionView, followupView };
 const SECTION_ORDER = ["keyboard", "mouse", "screen", "headphones", "other", "none"];
 const SESSION_STALE_SECONDS = 15 * 60;
 const SESSION_STALE_MS = SESSION_STALE_SECONDS * 1000;
 const SESSION_STALE_LABEL = `${Math.round(SESSION_STALE_SECONDS / 60)} min`;
 const SESSION_PAGE_SIZE = 50;
+const REPORT_SESSION_MATCH_MS = 5 * 60 * 1000;
+const USAGE_DEDUPE_MS = 2 * 60 * 1000;
 const PREFERENCES_KEY = "damage-dashboard-preferences-v2";
 
 let currentPC = null;
@@ -89,10 +108,14 @@ let unsubReports = null;
 let unsubUnres = null;
 let unsubSessions = null;
 let toastTimer = null;
+let followupRenderVersion = 0;
 let sessionPage = 1;
 let isDeletingSessions = false;
+let isDeletingComputer = false;
 const selectedSessionIds = new Set();
 const expandedSessionIds = new Set();
+const studentSessionLimits = new Map();
+const expandedStudentKeys = new Set();
 
 function emptyComputer() {
   return { keyboard: [], mouse: [], screen: [], headphones: [], other: [] };
@@ -315,23 +338,30 @@ function setHash(value) {
 }
 
 function activateTab(targetId) {
+  let activeButton = null;
   tabButtons.filter(Boolean).forEach(button => {
     const active = button.dataset.target === targetId;
+    if (active) activeButton = button;
     button.classList.toggle("active", active);
     button.setAttribute("aria-selected", String(active));
   });
   Object.entries(tabPanels).forEach(([id, panel]) => panel?.classList.toggle("active", id === targetId));
+  if (activeButton && window.matchMedia("(max-width: 680px)").matches) {
+    window.requestAnimationFrame(() => activeButton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" }));
+  }
 }
 
 function showPcView() { activateTab("dash"); setHash(""); drawTable(); }
 async function showGlobalViewTab() { activateTab("globalView"); setHash("#global"); await showGlobalView(); }
 async function showHeadphonesView() { activateTab("headphoneView"); setHash("#headphones"); await renderHeadphones(); }
 function showSessionsView() { activateTab("sessionView"); setHash("#sessions"); renderSessions(); }
+async function showFollowupView() { activateTab("followupView"); setHash("#followup"); await renderFollowups(); }
 
 tabPc?.addEventListener("click", showPcView);
 tabGlobal?.addEventListener("click", showGlobalViewTab);
 tabHeadphones?.addEventListener("click", showHeadphonesView);
 tabSessions?.addEventListener("click", showSessionsView);
+tabFollowup?.addEventListener("click", showFollowupView);
 
 function createButton(labelText, action, options = {}) {
   const button = document.createElement("button");
@@ -433,12 +463,63 @@ async function handleDamageAction(button) {
       showToast(unresolvedNow ? "Le dégât est marqué comme réglé." : "Le dégât est rouvert.");
     }
     invalidateDashboardCollections();
-    await Promise.all([drawTable(), showGlobalView(), renderHeadphones()]);
+    await Promise.all([drawTable(), showGlobalView(), renderHeadphones(), followupView?.classList.contains("active") ? renderFollowups() : Promise.resolve()]);
   } catch (error) {
     console.error("handleDamageAction", error);
     window.alert("L’action n’a pas pu être enregistrée. Réessaie dans un instant.");
   } finally {
     button.disabled = false;
+  }
+}
+
+async function deleteDocumentRefs(refs) {
+  for (let index = 0; index < refs.length; index += 400) {
+    const batch = writeBatch(db);
+    refs.slice(index, index + 400).forEach(ref => batch.delete(ref));
+    await batch.commit();
+  }
+}
+
+async function deleteCurrentComputer() {
+  if (!currentPC || isDeletingComputer) return;
+  const pc = currentPC;
+  isDeletingComputer = true;
+  if (deleteComputerButton) {
+    deleteComputerButton.disabled = true;
+    deleteComputerButton.textContent = "Vérification…";
+  }
+  try {
+    const [reports, sessions] = await Promise.all([
+      getDocs(query(collection(db, "reports"), where("pcId", "==", pc))),
+      getDocs(query(collection(db, "report_sessions"), where("pcId", "==", pc)))
+    ]);
+    const expected = `PC ${pc}`;
+    const answer = window.prompt(
+      `Cette suppression effacera ${expected}, ${formatCount(reports.size, "signalement")} et ${formatCount(sessions.size, "session")} de la base.\n\nCette action est irréversible. Pour confirmer, saisissez exactement : ${expected}`
+    );
+    if (answer === null) return;
+    if (answer.trim() !== expected) {
+      window.alert("La confirmation ne correspond pas. Aucun élément n’a été supprimé.");
+      return;
+    }
+    if (deleteComputerButton) deleteComputerButton.textContent = "Suppression…";
+    await deleteDocumentRefs([
+      ...reports.docs.map(snapshot => snapshot.ref),
+      ...sessions.docs.map(snapshot => snapshot.ref),
+      doc(db, "computers", pc)
+    ]);
+    invalidateDashboardCollections();
+    showToast(`${expected} et son historique ont été supprimés.`);
+    window.setTimeout(() => location.reload(), 650);
+  } catch (error) {
+    console.error("deleteCurrentComputer", error);
+    window.alert("La suppression n’a pas pu être terminée. Actualisez la page avant de vérifier les éléments restants ou de réessayer.");
+  } finally {
+    isDeletingComputer = false;
+    if (deleteComputerButton) {
+      deleteComputerButton.disabled = false;
+      deleteComputerButton.textContent = "Supprimer cet ordinateur";
+    }
   }
 }
 
@@ -483,6 +564,7 @@ async function initDashboard() {
   }
 
   pcSelect?.addEventListener("change", event => subscribeToPc(event.target.value));
+  deleteComputerButton?.addEventListener("click", deleteCurrentComputer);
   [onlyDamages, onlyUnresToggleEl, pcSort].forEach(control => control?.addEventListener("change", drawTable));
   pcDamageSearch?.addEventListener("input", drawTable);
   pcHeadphoneSelect?.addEventListener("change", event => { currentHeadphoneDetail = event.target.value || ""; drawTable(); });
@@ -499,6 +581,8 @@ async function initDashboard() {
   headphoneHideNotImportant?.addEventListener("change", renderHeadphones);
 
   [sessionDateFrom, sessionDateTo, sessionPcFilter, sessionHasDamage, sessionSort].forEach(control => control?.addEventListener("change", sessionFiltersChanged));
+  [sessionMinCount, studentSessionSort].forEach(control => control?.addEventListener("change", sessionFiltersChanged));
+  document.querySelectorAll('input[name="sessionViewMode"]').forEach(input => input.addEventListener("change", sessionModeChanged));
   sessionUserSearch?.addEventListener("input", sessionFiltersChanged);
   sessionReset?.addEventListener("click", resetSessionFilters);
   sessionSelectPage?.addEventListener("change", toggleSessionPageSelection);
@@ -506,9 +590,18 @@ async function initDashboard() {
   sessionDeleteSelected?.addEventListener("click", deleteSelectedSessions);
   sessionPagination?.addEventListener("click", handlePaginationClick);
 
+  followupSearch?.addEventListener("input", renderFollowups);
+  followupSort?.addEventListener("change", renderFollowups);
+  followupReset?.addEventListener("click", () => {
+    if (followupSearch) followupSearch.value = "";
+    if (followupSort) followupSort.value = "newest";
+    renderFollowups();
+  });
+
   subscribeSessions();
 
-  if (location.hash === "#global") await showGlobalViewTab();
+  if (location.hash === "#followup") await showFollowupView();
+  else if (location.hash === "#global") await showGlobalViewTab();
   else if (location.hash === "#headphones") await showHeadphonesView();
   else if (location.hash === "#sessions") showSessionsView();
   else showPcView();
@@ -517,6 +610,7 @@ async function initDashboard() {
 function subscribeToPc(pc) {
   if (!pc || pc === currentPC) { drawTable(); return; }
   currentPC = pc;
+  if (deleteComputerButton) deleteComputerButton.disabled = false;
   currentHeadphoneDetail = "";
   if (pcHeadphoneSelect) pcHeadphoneSelect.value = "";
   unsubReports?.();
@@ -1024,6 +1118,21 @@ function eligibleSessions() {
   });
 }
 
+function sessionViewMode() {
+  return document.querySelector('input[name="sessionViewMode"]:checked')?.value || "all";
+}
+
+function applySessionModeVisibility() {
+  const grouped = sessionViewMode() === "student";
+  document.querySelectorAll(".student-mode-only").forEach(element => element.classList.toggle("hidden", !grouped));
+  document.querySelectorAll(".all-mode-only").forEach(element => element.classList.toggle("hidden", grouped));
+  sessionTableShell?.classList.toggle("hidden", grouped);
+  studentSessionGroups?.classList.toggle("hidden", !grouped);
+  if (!grouped) studentSessionEmpty?.classList.add("hidden");
+  if (sessionResultLabel) sessionResultLabel.textContent = grouped ? "élèves" : "sessions";
+  if (sessionSelectPageLabel) sessionSelectPageLabel.textContent = grouped ? "Sélectionner les sessions affichées" : "Sélectionner la page";
+}
+
 function dateInputBoundary(value, endOfDay = false) {
   if (!value) return 0;
   const date = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00"}`);
@@ -1051,6 +1160,33 @@ function filteredSessions() {
     return mode === "oldest" ? sessionStartMs(a) - sessionStartMs(b) : sessionStartMs(b) - sessionStartMs(a);
   });
   return result;
+}
+
+function groupSessionsByStudent() {
+  const groups = new Map();
+  filteredSessions().forEach(session => {
+    const displayName = String(session.user || "").trim();
+    const key = normalizeText(displayName);
+    if (!key) return;
+    if (!groups.has(key)) groups.set(key, { key, user: displayName, items: [], latest: 0 });
+    const group = groups.get(key);
+    group.items.push(session);
+    group.latest = Math.max(group.latest, sessionStartMs(session));
+  });
+  const minimumExclusive = Number.parseInt(sessionMinCount?.value, 10) || 2;
+  const result = Array.from(groups.values()).filter(group => group.items.length > minimumExclusive);
+  result.forEach(group => group.items.sort((a, b) => sessionStartMs(b) - sessionStartMs(a)));
+  const mode = studentSessionSort?.value || "count";
+  result.sort((a, b) => {
+    if (mode === "name") return a.user.localeCompare(b.user, "fr", { sensitivity: "base" });
+    if (mode === "latest") return b.latest - a.latest || b.items.length - a.items.length;
+    return b.items.length - a.items.length || b.latest - a.latest;
+  });
+  return result;
+}
+
+function groupedDisplayedSessions() {
+  return groupSessionsByStudent().flatMap(group => group.items);
 }
 
 function populateSessionPcFilter() {
@@ -1081,6 +1217,7 @@ function subscribeSessions() {
     Array.from(expandedSessionIds).forEach(id => { if (!available.has(id)) expandedSessionIds.delete(id); });
     populateSessionPcFilter();
     renderSessions();
+    if (followupView?.classList.contains("active")) renderFollowups();
   }, error => console.warn("subscribeSessions", error));
 }
 
@@ -1088,7 +1225,17 @@ function sessionFiltersChanged() {
   sessionPage = 1;
   selectedSessionIds.clear();
   expandedSessionIds.clear();
+  studentSessionLimits.clear();
+  expandedStudentKeys.clear();
   renderSessions();
+}
+
+function sessionModeChanged() {
+  if (sessionViewMode() === "student") {
+    if (sessionPcFilter) sessionPcFilter.value = "";
+    if (sessionHasDamage) sessionHasDamage.checked = false;
+  }
+  sessionFiltersChanged();
 }
 
 function resetSessionFilters() {
@@ -1098,6 +1245,8 @@ function resetSessionFilters() {
   if (sessionUserSearch) sessionUserSearch.value = "";
   if (sessionHasDamage) sessionHasDamage.checked = false;
   if (sessionSort) sessionSort.value = "newest";
+  if (sessionMinCount) sessionMinCount.value = "2";
+  if (studentSessionSort) studentSessionSort.value = "count";
   sessionFiltersChanged();
 }
 
@@ -1185,6 +1334,7 @@ function renderSessionPagination(total, totalPages, startIndex, pageItems) {
 }
 
 function updateSessionSelectionControls(filtered, pageItems) {
+  const grouped = sessionViewMode() === "student";
   const pageIds = pageItems.map(item => item._id);
   const selectedOnPage = pageIds.filter(id => selectedSessionIds.has(id)).length;
   if (sessionSelectPage) {
@@ -1197,7 +1347,9 @@ function updateSessionSelectionControls(filtered, pageItems) {
     const period = sessionDateFrom?.value || sessionDateTo?.value;
     sessionSelectFiltered.textContent = allFilteredSelected
       ? "Désélectionner les résultats"
-      : `Sélectionner les ${filtered.length.toLocaleString("fr-CH")} résultats ${period ? "de la période" : "filtrés"}`;
+      : grouped
+        ? `Sélectionner les ${filtered.length.toLocaleString("fr-CH")} sessions affichées`
+        : `Sélectionner les ${filtered.length.toLocaleString("fr-CH")} résultats ${period ? "de la période" : "filtrés"}`;
     sessionSelectFiltered.disabled = !filtered.length;
   }
   const count = selectedSessionIds.size;
@@ -1205,8 +1357,106 @@ function updateSessionSelectionControls(filtered, pageItems) {
   if (sessionDeleteSelected) sessionDeleteSelected.disabled = !count || isDeletingSessions;
 }
 
+function appendStudentSessionRow(tbodyElement, session) {
+  const row = document.createElement("tr");
+  row.dataset.sessionId = session._id;
+  const checkCell = document.createElement("td");
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.className = "row-check";
+  checkbox.dataset.action = "select-session";
+  checkbox.dataset.sessionId = session._id;
+  checkbox.checked = selectedSessionIds.has(session._id);
+  checkbox.setAttribute("aria-label", `Sélectionner la session du ${formatDateTime(sessionStartMs(session))}`);
+  checkCell.appendChild(checkbox);
+  row.appendChild(checkCell);
+  [formatDateTime(sessionStartMs(session)), session.pcId ? `PC ${session.pcId}` : "PC inconnu", labelStep(session.step)].forEach(value => {
+    const cell = document.createElement("td");
+    cell.textContent = value;
+    row.appendChild(cell);
+  });
+  const damageCell = document.createElement("td");
+  const damageStatus = document.createElement("span");
+  damageStatus.className = `status ${session.hasRealDamage ? "danger" : "success"}`;
+  damageStatus.textContent = session.hasRealDamage ? "Dégât saisi" : "Aucun dégât";
+  damageCell.appendChild(damageStatus);
+  row.appendChild(damageCell);
+  const actionCell = document.createElement("td");
+  actionCell.className = "session-row-actions";
+  actionCell.appendChild(createButton("Supprimer", "delete-session", { icon: "trash", variant: "danger", data: { sessionId: session._id } }));
+  row.appendChild(actionCell);
+  tbodyElement.appendChild(row);
+}
+
+function renderStudentSessionGroups() {
+  if (!studentSessionGroups) return;
+  const groups = groupSessionsByStudent();
+  const displayed = groups.flatMap(group => group.items);
+  studentSessionGroups.replaceChildren();
+  if (studentSessionEmpty) studentSessionEmpty.textContent = "Aucun élève ne dépasse le nombre d’abandons choisi.";
+  studentSessionEmpty?.classList.toggle("hidden", Boolean(groups.length));
+  if (sessionResultCount) sessionResultCount.textContent = groups.length.toLocaleString("fr-CH");
+
+  groups.forEach((group, groupIndex) => {
+    const details = document.createElement("details");
+    details.className = "student-session-group";
+    details.open = expandedStudentKeys.has(group.key) || (groupIndex === 0 && expandedStudentKeys.size === 0);
+    if (details.open) expandedStudentKeys.add(group.key);
+    details.addEventListener("toggle", () => {
+      if (details.open) expandedStudentKeys.add(group.key);
+      else expandedStudentKeys.delete(group.key);
+    });
+    const summary = document.createElement("summary");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "row-check";
+    checkbox.dataset.action = "select-student-sessions";
+    checkbox.dataset.studentKey = group.key;
+    const selectedCount = group.items.filter(item => selectedSessionIds.has(item._id)).length;
+    checkbox.checked = selectedCount === group.items.length;
+    checkbox.indeterminate = selectedCount > 0 && selectedCount < group.items.length;
+    checkbox.setAttribute("aria-label", `Sélectionner les sessions de ${group.user}`);
+    checkbox.addEventListener("click", event => event.stopPropagation());
+    const name = document.createElement("span");
+    name.className = "student-name";
+    name.textContent = group.user;
+    const count = document.createElement("span");
+    count.className = "group-count";
+    count.textContent = formatCount(group.items.length, "abandon");
+    const last = document.createElement("span");
+    last.className = "student-last";
+    last.textContent = `Dernier abandon : ${formatDateTime(group.latest)}`;
+    summary.append(checkbox, name, count, last);
+    details.appendChild(summary);
+
+    const tableWrapper = document.createElement("div");
+    tableWrapper.className = "table-shell";
+    const table = document.createElement("table");
+    table.className = "student-session-table";
+    table.innerHTML = "<thead><tr><th>Sélection</th><th>Date et heure</th><th>Ordinateur</th><th>Dernière étape</th><th>Contenu</th><th>Action</th></tr></thead>";
+    const body = document.createElement("tbody");
+    const limit = studentSessionLimits.get(group.key) || 20;
+    group.items.slice(0, limit).forEach(session => appendStudentSessionRow(body, session));
+    table.appendChild(body);
+    tableWrapper.appendChild(table);
+    if (group.items.length > limit) {
+      const moreBar = document.createElement("div");
+      moreBar.className = "pagination";
+      const text = document.createElement("span");
+      text.textContent = `${limit.toLocaleString("fr-CH")} sur ${group.items.length.toLocaleString("fr-CH")} sessions`;
+      const more = createButton(`Afficher ${Math.min(20, group.items.length - limit)} de plus`, "more-student-sessions", { data: { studentKey: group.key } });
+      moreBar.append(text, more);
+      tableWrapper.appendChild(moreBar);
+    }
+    details.appendChild(tableWrapper);
+    studentSessionGroups.appendChild(details);
+  });
+  updateSessionSelectionControls(displayed, displayed);
+}
+
 function renderSessions() {
   if (!sessionTableBody) return;
+  applySessionModeVisibility();
   if (!sessionDataLoaded) {
     sessionTableBody.replaceChildren();
     if (sessionResultCount) sessionResultCount.textContent = "…";
@@ -1216,6 +1466,15 @@ function renderSessions() {
     if (sessionSelectPage) sessionSelectPage.disabled = true;
     if (sessionSelectFiltered) sessionSelectFiltered.disabled = true;
     if (sessionDeleteSelected) sessionDeleteSelected.disabled = true;
+    if (sessionViewMode() === "student") {
+      studentSessionGroups?.replaceChildren();
+      if (studentSessionEmpty) studentSessionEmpty.textContent = "Chargement des sessions…";
+      studentSessionEmpty?.classList.remove("hidden");
+    }
+    return;
+  }
+  if (sessionViewMode() === "student") {
+    renderStudentSessionGroups();
     return;
   }
   if (sessionEmpty) sessionEmpty.textContent = "Aucune session non validée ne correspond aux filtres.";
@@ -1273,6 +1532,7 @@ function renderSessions() {
 }
 
 function currentSessionPageItems() {
+  if (sessionViewMode() === "student") return groupedDisplayedSessions();
   const filtered = filteredSessions();
   const start = (sessionPage - 1) * SESSION_PAGE_SIZE;
   return filtered.slice(start, start + SESSION_PAGE_SIZE);
@@ -1285,7 +1545,7 @@ function toggleSessionPageSelection() {
 }
 
 function toggleAllFilteredSessions() {
-  const filtered = filteredSessions();
+  const filtered = sessionViewMode() === "student" ? groupedDisplayedSessions() : filteredSessions();
   const allSelected = filtered.length && filtered.every(item => selectedSessionIds.has(item._id));
   filtered.forEach(item => allSelected ? selectedSessionIds.delete(item._id) : selectedSessionIds.add(item._id));
   renderSessions();
@@ -1330,6 +1590,228 @@ async function deleteSelectedSessions() {
   }
 }
 
+async function deleteSingleSession(id, button) {
+  if (!id || !window.confirm("Supprimer définitivement cette session ?")) return;
+  button.disabled = true;
+  try {
+    await deleteDoc(doc(db, "report_sessions", id));
+    selectedSessionIds.delete(id);
+    expandedSessionIds.delete(id);
+    showToast("La session a été supprimée.");
+  } catch (error) {
+    console.error("delete session", error);
+    window.alert("La session n’a pas pu être supprimée.");
+    button.disabled = false;
+  }
+}
+
+function sessionCompleted(session) {
+  return session?.status === "validated";
+}
+
+function sessionEndMs(session) {
+  return timestampToMs(session?.validatedAt) || sessionLastSeenMs(session);
+}
+
+function matchingValidatedSession(report, sessions = sessionCache) {
+  const reportWhen = getReportWhenTs(report);
+  const reportUser = normalizeText(getReportUser(report));
+  if (!reportWhen || !reportUser || !report?.pcId) return null;
+  return sessions
+    .filter(session => sessionCompleted(session) && String(session.pcId || "") === String(report.pcId) && normalizeText(session.user) === reportUser)
+    .map(session => ({ session, distance: Math.abs(sessionEndMs(session) - reportWhen) }))
+    .filter(candidate => candidate.distance <= REPORT_SESSION_MATCH_MS)
+    .sort((a, b) => a.distance - b.distance)[0]?.session || null;
+}
+
+function buildUsageEvents(reportSnapshots) {
+  const events = sessionCache
+    .filter(session => sessionStartMs(session) && String(session.user || "").trim())
+    .map(session => ({
+      id: `session:${session._id}`,
+      sessionId: session._id,
+      pcId: String(session.pcId || ""),
+      user: String(session.user || "").trim(),
+      whenTs: sessionStartMs(session),
+      completed: sessionCompleted(session),
+      source: "session"
+    }));
+
+  reportSnapshots.forEach(snapshot => {
+    const report = { ...snapshot.data(), _id: snapshot.id };
+    if (!report.pcId || !getReportWhenTs(report) || !getReportUser(report)) return;
+    if (matchingValidatedSession(report)) return;
+    events.push({
+      id: `report:${snapshot.id}`,
+      reportId: snapshot.id,
+      pcId: String(report.pcId),
+      user: getReportUser(report),
+      whenTs: getReportWhenTs(report),
+      completed: true,
+      source: "report"
+    });
+  });
+  return events;
+}
+
+function previousUsesForIssue(issue, events, reportById) {
+  if (!issue.whenTs) return [];
+  const report = reportById.get(issue.reportId);
+  const currentSession = report ? matchingValidatedSession(report) : null;
+  const candidates = events
+    .filter(event => event.pcId === String(issue.pcId) && event.whenTs < issue.whenTs)
+    .filter(event => !currentSession || event.sessionId !== currentSession._id)
+    .filter(event => !issue.reportId || event.reportId !== issue.reportId)
+    .sort((a, b) => b.whenTs - a.whenTs);
+  const result = [];
+  for (const event of candidates) {
+    const nearDuplicate = result.some(existing => normalizeText(existing.user) === normalizeText(event.user) && Math.abs(existing.whenTs - event.whenTs) <= USAGE_DEDUPE_MS);
+    if (nearDuplicate) continue;
+    result.push(event);
+    if (result.length === 3) break;
+  }
+  return result;
+}
+
+async function buildFollowupEntries() {
+  const [cards, collections] = await Promise.all([loadOverviewData(), loadDashboardCollections()]);
+  const reportById = new Map();
+  collections.reports.forEach(snapshot => reportById.set(snapshot.id, { ...snapshot.data(), _id: snapshot.id }));
+  const events = buildUsageEvents(collections.reports.docs);
+  return cards.flatMap(card => card.issues)
+    .filter(issue => !issue.isNotImportant)
+    .map(issue => ({ ...issue, previousUses: previousUsesForIssue(issue, events, reportById) }));
+}
+
+function appendFollowupMetadata(list, labelText, valueText) {
+  const term = document.createElement("dt");
+  term.textContent = labelText;
+  const value = document.createElement("dd");
+  value.textContent = valueText || "—";
+  list.append(term, value);
+}
+
+function createPreviousUseRow(use, index) {
+  const row = document.createElement("div");
+  row.className = "previous-use";
+  const rank = document.createElement("span");
+  rank.className = "use-index";
+  rank.textContent = String(index + 1);
+  const user = document.createElement("span");
+  user.className = "use-user";
+  user.textContent = use.user || "Élève inconnu";
+  const time = document.createElement("span");
+  time.className = "use-time";
+  time.textContent = formatDateTime(use.whenTs);
+  const status = document.createElement("span");
+  status.className = `status ${use.completed ? "success" : "warning"}`;
+  status.textContent = use.completed ? "Formulaire rempli" : "Formulaire non validé";
+  row.append(rank, user, time, status);
+  return row;
+}
+
+function createFollowupGroup(entry, index) {
+  const details = document.createElement("details");
+  details.className = "investigation-group";
+  details.open = index === 0;
+  const summary = document.createElement("summary");
+  const alert = document.createElement("span");
+  alert.className = "investigation-alert";
+  alert.textContent = "!";
+  alert.setAttribute("aria-hidden", "true");
+  const pc = document.createElement("span");
+  pc.className = "investigation-pc";
+  pc.textContent = `PC ${entry.pcId}`;
+  const component = document.createElement("span");
+  component.className = "investigation-component";
+  component.textContent = label(entry.section);
+  const damage = document.createElement("span");
+  damage.className = "investigation-damage";
+  damage.textContent = entry.descText || "Dégât sans description";
+  const date = document.createElement("span");
+  date.className = "investigation-meta";
+  date.textContent = entry.whenTs ? formatDateTime(entry.whenTs) : "Date inconnue";
+  const reporter = document.createElement("span");
+  reporter.className = "investigation-meta investigation-reporter";
+  reporter.textContent = entry.user || "Élève inconnu";
+  summary.append(alert, pc, component, damage, date, reporter);
+  details.appendChild(summary);
+
+  const panel = document.createElement("div");
+  panel.className = "investigation-panel";
+  const reportSection = document.createElement("section");
+  reportSection.className = "investigation-section";
+  const reportTitle = document.createElement("h3");
+  reportTitle.textContent = "Dégât signalé";
+  const meta = document.createElement("dl");
+  meta.className = "investigation-report-meta";
+  appendFollowupMetadata(meta, "Signalé par", entry.user || "Élève inconnu");
+  appendFollowupMetadata(meta, "Date et heure", entry.whenTs ? formatDateTime(entry.whenTs) : "Date inconnue");
+  appendFollowupMetadata(meta, "Ordinateur", `PC ${entry.pcId}`);
+  appendFollowupMetadata(meta, "Composant", label(entry.section));
+  appendFollowupMetadata(meta, "Description", entry.descText || "Dégât sans description");
+  const openPc = createButton("Ouvrir la fiche du PC", "open-investigation-pc", { data: { pc: entry.pcId } });
+  reportSection.append(reportTitle, meta, openPc);
+
+  const previousSection = document.createElement("section");
+  previousSection.className = "investigation-section";
+  const previousTitle = document.createElement("h3");
+  previousTitle.textContent = "3 utilisations précédentes";
+  const list = document.createElement("div");
+  list.className = "previous-use-list";
+  entry.previousUses.forEach((use, useIndex) => list.appendChild(createPreviousUseRow(use, useIndex)));
+  if (!entry.previousUses.length) {
+    const empty = document.createElement("p");
+    empty.className = "damage-meta";
+    empty.textContent = "Aucune utilisation antérieure n’a été retrouvée pour cet ordinateur.";
+    list.appendChild(empty);
+  } else if (entry.previousUses.length < 3) {
+    const partial = document.createElement("p");
+    partial.className = "damage-meta";
+    partial.textContent = `Seulement ${formatCount(entry.previousUses.length, "utilisation")} retrouvée${entry.previousUses.length > 1 ? "s" : ""}.`;
+    list.appendChild(partial);
+  }
+  previousSection.append(previousTitle, list);
+  panel.append(reportSection, previousSection);
+  details.appendChild(panel);
+  return details;
+}
+
+async function renderFollowups() {
+  if (!followupList) return;
+  const renderVersion = ++followupRenderVersion;
+  followupList.replaceChildren();
+  if (followupResultCount) followupResultCount.textContent = "…";
+  if (followupEmpty) {
+    followupEmpty.textContent = sessionDataLoaded ? "Chargement des enquêtes…" : "Chargement des sessions et des signalements…";
+    followupEmpty.classList.remove("hidden");
+  }
+  if (!sessionDataLoaded) return;
+  try {
+    const entries = await buildFollowupEntries();
+    if (renderVersion !== followupRenderVersion) return;
+    const needle = normalizeText(followupSearch?.value);
+    const filtered = entries.filter(entry => !needle || normalizeText(`PC ${entry.pcId} ${label(entry.section)} ${entry.descText} ${entry.user} ${entry.previousUses.map(use => use.user).join(" ")}`).includes(needle));
+    const mode = followupSort?.value || "newest";
+    filtered.sort((a, b) => {
+      if (mode === "computer") return comparePcIds(a.pcId, b.pcId) || b.whenTs - a.whenTs;
+      return mode === "oldest" ? (a.whenTs || Number.MAX_SAFE_INTEGER) - (b.whenTs || Number.MAX_SAFE_INTEGER) : b.whenTs - a.whenTs;
+    });
+    followupList.replaceChildren();
+    filtered.forEach((entry, index) => followupList.appendChild(createFollowupGroup(entry, index)));
+    if (followupResultCount) followupResultCount.textContent = filtered.length.toLocaleString("fr-CH");
+    if (followupEmpty) {
+      followupEmpty.textContent = "Aucun dégât important ne correspond à la recherche.";
+      followupEmpty.classList.toggle("hidden", Boolean(filtered.length));
+    }
+  } catch (error) {
+    console.error("renderFollowups", error);
+    if (renderVersion !== followupRenderVersion) return;
+    if (followupResultCount) followupResultCount.textContent = "—";
+    if (followupEmpty) followupEmpty.textContent = "Les enquêtes n’ont pas pu être chargées.";
+  }
+}
+
 tbody?.addEventListener("click", event => {
   const button = event.target.closest("button[data-action]");
   if (button) handleDamageAction(button);
@@ -1343,6 +1825,16 @@ globalGrid?.addEventListener("click", event => {
 headphoneGrid?.addEventListener("click", event => {
   const button = event.target.closest("button[data-action]");
   if (button) handleDamageAction(button);
+});
+
+followupList?.addEventListener("click", event => {
+  const button = event.target.closest("button[data-action='open-investigation-pc']");
+  if (!button) return;
+  const pc = button.dataset.pc;
+  if (!pc || !Array.from(pcSelect?.options || []).some(option => option.value === pc)) return;
+  pcSelect.value = pc;
+  subscribeToPc(pc);
+  showPcView();
 });
 
 sessionTableBody?.addEventListener("change", event => {
@@ -1365,18 +1857,33 @@ sessionTableBody?.addEventListener("click", async event => {
     return;
   }
   if (button.dataset.action === "delete-session") {
-    if (!window.confirm("Supprimer définitivement cette session ?")) return;
-    button.disabled = true;
-    try {
-      await deleteDoc(doc(db, "report_sessions", id));
-      selectedSessionIds.delete(id);
-      expandedSessionIds.delete(id);
-      showToast("La session a été supprimée.");
-    } catch (error) {
-      console.error("delete session", error);
-      window.alert("La session n’a pas pu être supprimée.");
-      button.disabled = false;
-    }
+    await deleteSingleSession(id, button);
+  }
+});
+
+studentSessionGroups?.addEventListener("change", event => {
+  const checkbox = event.target.closest("input[data-action]");
+  if (!checkbox) return;
+  if (checkbox.dataset.action === "select-session") {
+    if (checkbox.checked) selectedSessionIds.add(checkbox.dataset.sessionId);
+    else selectedSessionIds.delete(checkbox.dataset.sessionId);
+  } else if (checkbox.dataset.action === "select-student-sessions") {
+    const group = groupSessionsByStudent().find(item => item.key === checkbox.dataset.studentKey);
+    group?.items.forEach(item => checkbox.checked ? selectedSessionIds.add(item._id) : selectedSessionIds.delete(item._id));
+  }
+  renderStudentSessionGroups();
+});
+
+studentSessionGroups?.addEventListener("click", async event => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+  if (button.dataset.action === "more-student-sessions") {
+    const key = button.dataset.studentKey;
+    studentSessionLimits.set(key, (studentSessionLimits.get(key) || 20) + 20);
+    expandedStudentKeys.add(key);
+    renderStudentSessionGroups();
+  } else if (button.dataset.action === "delete-session") {
+    await deleteSingleSession(button.dataset.sessionId, button);
   }
 });
 
@@ -1384,6 +1891,7 @@ window.addEventListener("hashchange", () => {
   if (location.hash === "#global") showGlobalViewTab();
   else if (location.hash === "#headphones") showHeadphonesView();
   else if (location.hash === "#sessions") showSessionsView();
+  else if (location.hash === "#followup") showFollowupView();
   else showPcView();
 });
 

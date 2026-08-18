@@ -100,6 +100,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .view-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
 .view-heading h2 { margin: 0; font-size: clamp(1.45rem, 2.4vw, 1.9rem); line-height: 1.15; letter-spacing: -0.025em; }
 .view-heading p { margin: 0.35rem 0 0; color: var(--slate-600); }
+.view-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.7rem; }
 .result-total { color: var(--slate-600); white-space: nowrap; }
 .result-total strong { color: var(--navy-950); font-size: 1.35rem; }
 .metrics-grid {
@@ -197,6 +198,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .damage-row.group-empty { display: block; padding-block: 1rem; color: var(--slate-600); }
 .status { display: inline-flex; width: fit-content; align-items: center; padding: 0.28rem 0.52rem; border: 1px solid transparent; border-radius: 7px; font-size: 0.79rem; font-weight: 700; white-space: nowrap; }
 .status.danger { border-color: #f2b9bf; background: var(--red-100); color: var(--red-700); }
+.status.warning { border-color: #f3cf9d; background: var(--amber-100); color: var(--amber-700); }
 .status.neutral, .status.success { border-color: #b9dfcf; background: var(--green-100); color: var(--green-700); }
 .empty-state { padding: 2.5rem 1rem; border: 1px dashed var(--slate-300); border-radius: var(--radius-lg); background: var(--surface); color: var(--slate-600); text-align: center; }
 .table-shell { overflow: auto; border: 1px solid var(--slate-200); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
@@ -224,6 +226,40 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .session-meta dd { margin: 0; font-weight: 600; }
 .session-detail-list { display: grid; gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
 .session-detail-list li { padding: 0.5rem 0.65rem; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.83rem; }
+.session-mode-switch { margin: -0.35rem 0 1rem; }
+.student-session-list, .investigation-list { display: grid; gap: 0.7rem; }
+.student-session-group, .investigation-group { overflow: clip; border: 1px solid var(--slate-200); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.student-session-group > summary, .investigation-group > summary { display: grid; align-items: center; gap: 0.8rem; min-height: 3.85rem; padding: 0.75rem 1rem; list-style: none; cursor: pointer; }
+.student-session-group > summary { grid-template-columns: auto minmax(180px, 1.3fr) minmax(110px, 0.65fr) minmax(210px, 1fr) auto; }
+.student-session-group > summary::-webkit-details-marker, .investigation-group > summary::-webkit-details-marker { display: none; }
+.student-session-group > summary::after, .investigation-group > summary::after { content: ""; width: 0.55rem; height: 0.55rem; border-right: 2px solid var(--navy-800); border-bottom: 2px solid var(--navy-800); transform: rotate(45deg); transition: transform 150ms ease; }
+.student-session-group[open] > summary::after, .investigation-group[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px); }
+.student-name { min-width: 0; font-size: 1rem; font-weight: 750; overflow-wrap: anywhere; }
+.student-session-group .group-count { justify-self: start; }
+.student-last { color: var(--slate-600); font-size: 0.84rem; }
+.student-session-table { width: 100%; border-collapse: collapse; border-top: 1px solid var(--slate-200); }
+.student-session-table th, .student-session-table td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--slate-200); text-align: left; }
+.student-session-table th { background: var(--slate-50); color: var(--navy-800); font-size: 0.76rem; }
+.student-session-table tr:last-child td { border-bottom: 0; }
+.student-session-table .session-row-actions { width: 125px; text-align: right; }
+.student-session-table .btn { min-height: 2.2rem; padding: 0.38rem 0.62rem; }
+.investigation-group > summary { grid-template-columns: auto minmax(75px, 0.45fr) minmax(95px, 0.65fr) minmax(260px, 1.8fr) minmax(145px, 0.85fr) minmax(130px, 0.75fr) auto; }
+.investigation-alert { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; border-radius: 50%; background: var(--red-700); color: white; font-weight: 800; }
+.investigation-pc { font-weight: 750; }
+.investigation-damage { min-width: 0; color: var(--red-700); font-weight: 700; overflow-wrap: anywhere; }
+.investigation-meta { color: var(--slate-600); font-size: 0.84rem; }
+.investigation-panel { display: grid; grid-template-columns: minmax(280px, 0.85fr) minmax(520px, 1.45fr); gap: 0.8rem; padding: 0.85rem 1rem 1rem 3.8rem; border-top: 1px solid var(--slate-200); background: var(--slate-50); }
+.investigation-section { padding: 0.9rem 1rem; border: 1px solid var(--slate-200); border-radius: var(--radius-md); background: var(--surface); }
+.investigation-section h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+.investigation-report-meta { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 0.9rem; margin: 0; font-size: 0.84rem; }
+.investigation-report-meta dt { color: var(--slate-600); }
+.investigation-report-meta dd { margin: 0; font-weight: 650; overflow-wrap: anywhere; }
+.previous-use-list { display: grid; gap: 0.45rem; }
+.previous-use { display: grid; grid-template-columns: 1.65rem minmax(100px, 1fr) minmax(130px, 0.95fr) auto; align-items: center; gap: 0.65rem; min-height: 3.1rem; padding: 0.5rem 0.65rem; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); }
+.use-index { display: grid; width: 1.65rem; height: 1.65rem; place-items: center; border-right: 1px solid var(--slate-200); font-weight: 750; }
+.use-user { font-weight: 700; overflow-wrap: anywhere; }
+.use-time { color: var(--slate-600); font-size: 0.82rem; }
+.investigation-section .btn { margin-top: 0.9rem; }
 .pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem; border-top: 1px solid var(--slate-200); }
 .pagination-buttons { display: flex; gap: 0.3rem; }
 .page-btn { min-width: 2.25rem; padding-inline: 0.55rem; }
@@ -246,6 +282,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
   .damage-actions { grid-column: 2 / -1; justify-content: flex-start; }
   .session-selection { grid-template-columns: 1fr 1fr; }
   .selection-count { text-align: left; }
+  .investigation-group > summary { grid-template-columns: auto 85px 110px minmax(220px, 1fr) minmax(140px, 0.8fr) auto; }
+  .investigation-group > summary .investigation-reporter { display: none; }
+  .investigation-panel { grid-template-columns: 1fr; padding-left: 1rem; }
 }
 @media (max-width: 680px) {
   body { font-size: 0.92rem; }
@@ -256,6 +295,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
   .tab-btn svg { display: none; }
   .main-content { padding: 1.1rem 0.85rem 2.5rem; }
   .view-heading { align-items: flex-start; }
+  .view-heading-actions { align-items: flex-end; flex-direction: column; }
   .result-total { font-size: 0.78rem; }
   .result-total strong { font-size: 1.05rem; }
   .metrics-grid { display: flex; overflow-x: auto; border-radius: var(--radius-md); scrollbar-width: none; }
@@ -283,6 +323,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
   .session-selection { grid-template-columns: 1fr; }
   .session-selection .btn { width: 100%; }
   .session-details-panel { grid-template-columns: 1fr; padding: 0.9rem; }
+  .session-mode-switch { width: 100%; }
+  .student-session-group > summary { grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.55rem; }
+  .student-session-group > summary .group-count { grid-column: 2; width: fit-content; }
+  .student-last { display: none; }
+  .student-session-table { min-width: 640px; }
+  .student-session-group { overflow-x: auto; }
+  .investigation-group > summary { grid-template-columns: auto minmax(60px, auto) minmax(0, 1fr) auto; gap: 0.5rem; }
+  .investigation-component, .investigation-meta, .investigation-reporter { display: none; }
+  .investigation-panel { padding: 0.75rem; }
+  .previous-use { grid-template-columns: 1.65rem minmax(0, 1fr); }
+  .previous-use .use-time, .previous-use .status { grid-column: 2; }
   .pagination { align-items: stretch; flex-direction: column; }
   .pagination-buttons { justify-content: space-between; }
   .pagination-buttons .page-btn:not(.active):not([data-page-action]) { display: none; }
@@ -301,11 +352,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
       <button type="button" id="tabGlobal" class="tab-btn" data-target="globalView" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Vue d’ensemble</button>
       <button type="button" id="tabHeadphones" class="tab-btn" data-target="headphoneView" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h3v6H5a1 1 0 0 1-1-1v-5ZM20 14h-3v6h2a1 1 0 0 0 1-1v-5Z"/></svg>Écouteurs</button>
       <button type="button" id="tabSessions" class="tab-btn" data-target="sessionView" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Sessions non validées</button>
+      <button type="button" id="tabFollowup" class="tab-btn" data-target="followupView" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M16 11h6"/></svg>Élèves à interpeler</button>
     </nav>
   </div>
   <main class="main-content">
     <section id="dash" class="tab-panel active" aria-labelledby="pcHeading">
-      <div class="view-heading"><div><h2 id="pcHeading">Détails par ordinateur</h2><p>Historique et état actuel d’un poste ou d’un écouteur.</p></div><span id="pcResultCount" class="result-total" aria-live="polite"></span></div>
+      <div class="view-heading"><div><h2 id="pcHeading">Détails par ordinateur</h2><p>Historique et état actuel d’un poste ou d’un écouteur.</p></div><div class="view-heading-actions"><span id="pcResultCount" class="result-total" aria-live="polite"></span><button type="button" class="btn danger" id="deleteComputer" disabled>Supprimer cet ordinateur</button></div></div>
       <div class="toolbar">
         <label class="field">Ordinateur<select id="pcSelect"></select></label>
         <label class="field">Écouteur<select id="pcHeadphoneSelect"><option value="">— Aucun —</option></select></label>
@@ -350,31 +402,46 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
       <div class="empty-state hidden" id="headphoneEmpty">Aucun signalement d’écouteurs ne correspond aux filtres.</div>
     </section>
     <section id="sessionView" class="tab-panel" aria-labelledby="sessionHeading">
-      <div class="view-heading"><div><h2 id="sessionHeading">Sessions non validées</h2><p>Formulaires sans validation depuis plus de 15 min.</p></div><span class="result-total"><strong id="sessionResultCount">—</strong> sessions</span></div>
+      <div class="view-heading"><div><h2 id="sessionHeading">Sessions non validées</h2><p>Formulaires sans validation depuis plus de 15 min.</p></div><span class="result-total"><strong id="sessionResultCount">—</strong> <span id="sessionResultLabel">sessions</span></span></div>
+      <fieldset class="segmented session-mode-switch" aria-label="Mode d’affichage des sessions"><label><input type="radio" name="sessionViewMode" value="all" checked />Toutes les sessions</label><label><input type="radio" name="sessionViewMode" value="student" />Par élève</label></fieldset>
       <div class="toolbar" id="sessionFilters">
+        <label class="field student-mode-only hidden">Afficher les élèves avec<select id="sessionMinCount"><option value="1">Plus de 1 abandon</option><option value="2" selected>Plus de 2 abandons</option><option value="3">Plus de 3 abandons</option><option value="4">Plus de 4 abandons</option><option value="5">Plus de 5 abandons</option><option value="9">Plus de 9 abandons</option></select></label>
         <label class="field">Du<input type="date" id="sessionDateFrom" /></label>
         <label class="field">Au<input type="date" id="sessionDateTo" /></label>
-        <label class="field">Ordinateur<select id="sessionPcFilter"><option value="">Tous les ordinateurs</option></select></label>
+        <label class="field all-mode-only">Ordinateur<select id="sessionPcFilter"><option value="">Tous les ordinateurs</option></select></label>
         <label class="field grow">Élève<input type="search" id="sessionUserSearch" placeholder="Rechercher un élève" autocomplete="off" /></label>
-        <label class="check-control"><input type="checkbox" id="sessionHasDamage" /> Avec dégâts uniquement</label>
-        <label class="field">Ordre<select id="sessionSort"><option value="newest">Plus récentes d’abord</option><option value="oldest">Plus anciennes d’abord</option><option value="computer">Par ordinateur</option></select></label>
+        <label class="check-control all-mode-only"><input type="checkbox" id="sessionHasDamage" /> Avec dégâts uniquement</label>
+        <label class="field all-mode-only">Ordre<select id="sessionSort"><option value="newest">Plus récentes d’abord</option><option value="oldest">Plus anciennes d’abord</option><option value="computer">Par ordinateur</option></select></label>
+        <label class="field student-mode-only hidden">Classer les élèves<select id="studentSessionSort"><option value="count">Plus d’abandons d’abord</option><option value="latest">Dernier abandon</option><option value="name">Nom de l’élève</option></select></label>
         <button type="button" class="btn" id="sessionReset">Réinitialiser</button>
       </div>
       <div class="session-selection">
-        <label class="check-control"><input type="checkbox" id="sessionSelectPage" /> Sélectionner la page</label>
+        <label class="check-control"><input type="checkbox" id="sessionSelectPage" /> <span id="sessionSelectPageLabel">Sélectionner la page</span></label>
         <button type="button" class="btn primary" id="sessionSelectFiltered">Sélectionner les résultats filtrés</button>
         <span class="selection-count" id="sessionSelectionCount" aria-live="polite">0 sélectionnée</span>
         <button type="button" class="btn danger" id="sessionDeleteSelected" disabled>Supprimer la sélection</button>
       </div>
-      <div class="table-shell">
+      <div class="table-shell" id="sessionTableShell">
         <table class="data-table session-table" aria-label="Sessions non validées"><thead><tr><th class="check-cell"><span class="hidden">Sélection</span></th><th>Ordinateur</th><th>Date</th><th>Élève</th><th>Dernière étape</th><th>Dégâts</th><th class="actions-cell">Actions</th></tr></thead><tbody id="sessionTableBody"></tbody></table>
         <div class="empty-state hidden" id="sessionEmpty">Aucune session non validée ne correspond aux filtres.</div>
         <div class="pagination" id="sessionPagination"></div>
       </div>
+      <div id="studentSessionGroups" class="student-session-list hidden"></div>
+      <div class="empty-state hidden" id="studentSessionEmpty">Aucun élève ne dépasse le nombre d’abandons choisi.</div>
+    </section>
+    <section id="followupView" class="tab-panel" aria-labelledby="followupHeading">
+      <div class="view-heading"><div><h2 id="followupHeading">Élèves à interpeler</h2><p>Pour chaque dégât important, retrouvez le signalement et les trois utilisations précédentes.</p></div><span class="result-total"><strong id="followupResultCount">—</strong> dégâts importants</span></div>
+      <div class="toolbar">
+        <label class="field grow">Rechercher<input type="search" id="followupSearch" placeholder="Un élève, un ordinateur ou un dégât" autocomplete="off" /></label>
+        <label class="field">Ordre<select id="followupSort"><option value="newest">Plus récents d’abord</option><option value="oldest">Plus anciens d’abord</option><option value="computer">Par ordinateur</option></select></label>
+        <button type="button" class="btn" id="followupReset">Réinitialiser</button>
+      </div>
+      <div id="followupList" class="investigation-list" aria-live="polite"></div>
+      <div class="empty-state hidden" id="followupEmpty">Aucun dégât important ne correspond à la recherche.</div>
     </section>
   </main>
 </div>
 <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
-<script type="module" src="teacher.js?v=20260818.5"></script>
+<script type="module" src="teacher.js?v=20260818.9"></script>
 </body>
 </html>
