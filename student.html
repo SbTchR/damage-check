@@ -283,91 +283,13 @@ p {
   color: var(--blue-700);
   box-shadow: none;
 }
-.section button[data-sec][data-nothing] {
-  background: rgba(31, 122, 255, 0.14);
-  color: var(--blue-700);
-  border: 1px solid rgba(31, 122, 255, 0.28);
-  box-shadow: none;
-}
-.section button[data-sec][data-nothing]:hover,
-.section button[data-sec][data-nothing]:focus-visible {
-  background: rgba(31, 122, 255, 0.2);
-  box-shadow: none;
-}
-#welcomeStart {
-  align-self: flex-start;
-  margin-top: 0.6rem;
-  font-size: clamp(1.85rem, 1.7vw, 2rem);
-  padding-inline: 3.8rem;
-}
-#section-welcome {
-  background: linear-gradient(140deg, rgba(255,255,255,0.9), rgba(229,242,255,0.92));
-  position: relative;
-  overflow: hidden;
-}
-#section-welcome::before {
-  content: "";
-  position: absolute;
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(circle, rgba(33,161,255,0.18), rgba(33,161,255,0));
-  top: -120px;
-  right: -80px;
-  z-index: 0;
-}
-#section-welcome > * {
-  position: relative;
-  z-index: 1;
-}
-.welcome-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-weight: 600;
-  color: var(--blue-700);
-  background: rgba(33, 161, 255, 0.16);
-  padding: 0.4rem 0.9rem;
-  border-radius: 999px;
-  font-size: clamp(1.35rem, 1.2vw, 1.55rem);
-}
-.big-important {
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: var(--radius-md);
-  padding: 1.6rem 1.8rem;
-  box-shadow: var(--shadow-sm);
-}
-.big-important b {
-  font-size: clamp(1.7rem, 1.8vw, 1.95rem);
-  color: var(--grey-900);
-  font-weight: 700;
-  line-height: 1.45;
-}
-.big-important b + b {
-  display: block;
-  margin-top: 0.7rem;
-}
 .important-red {
   color: #ff2d4f !important;
   font-weight: 800;
 }
 
 .important-black {
-  font-size: clamp(1.8rem, 2vw, 3rem)
-}
-
-.welcome-points {
-  margin: 0;
-  gap: 0.9rem;
-}
-.welcome-points li::before {
-  content: "✔";
-  color: var(--blue-500);
-  font-size: 1.3rem;
-  top: 0.05rem;
-}
-.fine-print {
-  font-size: clamp(1.5rem, 1.4vw, 1.65rem);
-  color: var(--grey-600);
+  font-size: inherit;
 }
 .info-grid {
   display: grid;
@@ -401,6 +323,75 @@ p {
   color: var(--blue-700);
   font-weight: 700;
   font-size: clamp(1.55rem, 1.5vw, 1.85rem);
+}
+.form-heading {
+  display: grid;
+  gap: 0.35rem;
+}
+.form-heading h2 {
+  margin: 0;
+}
+.form-heading p {
+  color: var(--grey-600);
+  font-size: clamp(1.45rem, 1.5vw, 1.7rem);
+  line-height: 1.55;
+}
+.damage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.6rem;
+}
+.damage-card {
+  min-width: 0;
+  padding: 1.7rem;
+  border: 1px solid rgba(20, 95, 200, 0.16);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 10px 22px rgba(15, 63, 126, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.damage-card h3 {
+  margin: 0;
+  font-size: clamp(1.85rem, 2.2vw, 2.25rem);
+}
+.damage-card .already-signaled-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 1.3vw, 1.5rem);
+}
+.damage-card .existing-damage-list {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  gap: 0.65rem;
+}
+.damage-card .existing-damage-list li {
+  padding: 0.55rem 0.8rem;
+  font-size: clamp(1.25rem, 1.2vw, 1.45rem);
+  line-height: 1.45;
+}
+.damage-card .existing-damage-list li.existing-empty {
+  color: var(--grey-600);
+  background: rgba(224, 235, 249, 0.58);
+  box-shadow: inset 0 0 0 1px rgba(74, 94, 123, 0.13);
+  font-family: inherit;
+  font-weight: 500;
+}
+.damage-card .damage-action,
+.damage-card .headphone-actions button {
+  width: 100%;
+  min-height: 4.4rem;
+  padding: 0.85rem 1.4rem;
+  font-size: clamp(1.4rem, 1.35vw, 1.6rem);
+  line-height: 1.35;
+}
+.damage-card .damage-action {
+  margin-top: auto;
+}
+#damageContinue {
+  align-self: flex-end;
+  min-width: min(100%, 310px);
 }
 .exit-warning {
   margin-top: 1.2rem;
@@ -436,27 +427,28 @@ label {
   block-size: 1.6em;
   margin-right: 0.6rem;
 }
-#section-headphones .radio-group {
+.headphone-card .radio-group {
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
-  margin: 0.4rem 0 0.4rem;
+  margin: 0;
 }
-#section-headphones .radio-group label {
+.headphone-card .radio-group label {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  margin: 0;
 }
-#section-headphones input[type="radio"] {
+.headphone-card input[type="radio"] {
   inline-size: 1.5em;
   block-size: 1.5em;
 }
-#section-headphones input[type="checkbox"] {
+.headphone-card input[type="checkbox"] {
   inline-size: 1.5em;
   block-size: 1.5em;
 }
-#section-headphones input[type="radio"],
-#section-headphones input[type="checkbox"] {
+.headphone-card input[type="radio"],
+.headphone-card input[type="checkbox"] {
   accent-color: var(--blue-600);
 }
 #headphone-details {
@@ -465,6 +457,11 @@ label {
   padding: 1.6rem 1.4rem;
   display: grid;
   gap: 1.1rem;
+}
+#headphone-details label,
+.headphone-use-label {
+  margin: 0;
+  font-size: clamp(1.4rem, 1.35vw, 1.6rem);
 }
 #headphoneNumber {
   max-width: 220px;
@@ -478,15 +475,12 @@ label {
 }
 .headphone-actions input,
 .headphone-actions select {
-  flex: 0 0 auto;
-  padding: 0.45rem 0.6rem;
+  flex: 1 1 100%;
+  min-height: 4.4rem;
+  padding: 0.65rem 0.8rem;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(20, 95, 200, 0.25);
   background: rgba(255,255,255,0.95);
-}
-#btnNoHeadphone {
-  margin-top: 0.6rem;
-  align-self: flex-start;
 }
 .already-signaled-title {
   font-weight: 600;
@@ -571,7 +565,7 @@ label {
 #pwdCancel:hover, #pwdCancel:focus-visible {
   background: rgba(15, 80, 160, 0.16);
 }
-#rulesFinish.hidden, #btnNoHeadphone.hidden {
+#rulesFinish.hidden {
   display: none !important;
 }
 #rulesFinish {
@@ -652,13 +646,16 @@ label {
     padding: 2rem;
     gap: 1.6rem;
   }
+  .damage-grid {
+    grid-template-columns: 1fr;
+  }
+  .damage-card {
+    padding: 1.45rem;
+  }
   .exit-warning {
     flex-direction: column;
     text-align: center;
     align-items: center;
-  }
-  .big-important {
-    padding: 1.4rem 1.5rem;
   }
   .info-row {
     padding: 1.6rem 1.8rem;
@@ -683,14 +680,22 @@ label {
   h3 {
     font-size: 2rem;
   }
-  .welcome-badge {
-    font-size: 1.2rem;
-  }
   .attention-card {
     gap: 1.1rem;
   }
   .section ul li {
     padding-left: 1.7rem;
+  }
+  .pending-item {
+    grid-template-columns: 1fr;
+  }
+  .pending-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .pending-panel .pending-actions button {
+    width: 100%;
   }
 }
 </style>
@@ -718,30 +723,18 @@ label {
 </head>
 <body>
 
-<div id="attentionModal" role="dialog" aria-labelledby="attentionTitle" aria-modal="true">
+<div id="attentionModal" role="dialog" aria-label="Consignes importantes" aria-modal="true">
   <div class="attention-card">
     <ul>
-      <li>❗ <span class="important-red">Avant</span> d’utiliser cet ordinateur, <span class="important-red">tu dois</span> remplir ce questionnaire.</li>
       <li>⚠️ Ne <span class="important-red">quitte pas</span> cette page avant d’avoir terminé le questionnaire.</li>
-      <li><span class="important-black">🔄 Sile dégât a <span class="important-red">DÉJA </span>été signalé, ne le déclare <span class="important-red">PAS</span></b>  une 2e fois.</span></li>
-      <li><span class="important-black">🚫 Ne signale <span class="important-red">PAS</span> les traces minimes </span> 
-        <br><h6>(petits traits de stylo, usure, toutes petites rayures, poussière, etc.).</h6></li>
+      <li><span class="important-black">🔄 Si le dégât a <span class="important-red">DÉJÀ</span> été signalé, ne le déclare <span class="important-red">PAS</span> une 2e fois.</span></li>
+      <li><span class="important-black">🚫 Ne signale <span class="important-red">PAS</span> les traces minimes.</span><br><small>(petits traits de stylo, usure, toutes petites rayures, poussière, etc.)</small></li>
     </ul>
     <button id="attentionClose">J’ai compris</button>
   </div>
 </div>
 
 <main class="content-frame">
-  <section id="section-welcome" class="section">
-    <h2>Bienvenue&nbsp;!</h2>
-    <ul class="welcome-points">
-      <li>Signale honnêtement tout problème constaté (touche manquante, câble débranché, rayure bien visible, etc.).</li>
-      <li>Si tu déclares un nouveau dégât, l'enseignant devra le <span class="important-red">valider avec un mot de passe 🛡️</span> tout à la fin.</li>
-    </ul>
-    <p class="fine-print">Merci de ta collaboration pour le respect du matériel !</p>
-    <button id="welcomeStart">🚀 Commencer</button>
-  </section>
-
   <div class="info-grid">
     <div class="info-row">
       <span class="info-icon">💻</span>
@@ -763,87 +756,79 @@ label {
     <span class="exit-warning-text">Ne quitte pas cette page avant d'avoir complété le formulaire entièrement&nbsp;!</span>
   </div>
 
-  <!-- Sections -->
-  <div id="section-keyboard"  class="section hidden">
-    <h3>⌨️ Clavier</h3>
-    <div class="already-signaled-title">Dégâts déjà signalés :</div>
-  <ul id="list-keyboard" class="existing-damage-list"></ul>
-    <button data-sec="keyboard" data-nothing>Rien à signaler ⏩︎</button>
-    <button data-sec="keyboard" data-new>Signaler un nouveau dégât</button>
-  </div>
-
-  <div id="section-mouse"  class="section hidden">
-    <h3>🐭 Souris / Trackpad</h3>
-    <div class="already-signaled-title">Dégâts déjà signalés :</div>
-  <ul id="list-mouse" class="existing-damage-list"></ul>
-    <button data-sec="mouse" data-nothing>Rien à signaler ⏩︎</button>
-    <button data-sec="mouse" data-new>Signaler un nouveau dégât</button>
-    <button data-back>⏪︎ Précédent</button>
-  </div>
-
-  <div id="section-screen"  class="section hidden">
-    <h3>🖥️ Écran</h3>
-    <div class="already-signaled-title">Dégâts déjà signalés :</div>
-  <ul id="list-screen" class="existing-damage-list"></ul>
-    <button data-sec="screen" data-nothing>Rien à signaler ⏩︎</button>
-    <button data-sec="screen" data-new>Signaler un nouveau dégât</button>
-    <button data-back>⏪︎ Précédent</button>
-  </div>
-
-  <div id="section-headphones" class="section section-wide hidden">
-    <h3>🎧 Écouteurs</h3>
-  <div id="headphones-existing" class="existing-wrapper">
-    <div class="already-signaled-title">Dégâts déjà signalés :</div>
-    <ul id="list-headphones" class="existing-damage-list"></ul>
-  </div>
-
-    <label>
-      J'utilise une paire d'écouteurs :
-    </label>
-    <div class="radio-group">
-      <label><input type="radio" name="headphoneUse" value="oui" /> Oui</label>
-      <label><input type="radio" name="headphoneUse" value="non" /> Non</label>
+  <section id="section-damage" class="section section-wide">
+    <div class="form-heading">
+      <h2>Vérifie le matériel</h2>
+      <p>Un nouveau problème&nbsp;? Ajoute-le dans la bonne rubrique.</p>
     </div>
 
-    <div id="headphone-details" class="hidden">
-    <label for="headphoneNumber">
-      Numéro de la paire d'écouteurs :
-    </label>
-    <div class="headphone-actions">
-      <select id="headphoneNumber"></select>
-      <button id="newHeadphoneDamage">Signaler un nouveau dégât</button>
-      <button id="noHeadphoneDamage">Aucun dégât ✔︎</button>
-    </div>
-    </div>
-    <button id="btnNoHeadphone" class="hidden">Rien à signaler ⏩︎</button>
-    <button data-back>⏪︎ Précédent</button>
-  </div>
+    <div class="damage-grid">
+      <article class="damage-card" aria-labelledby="keyboard-title">
+        <h3 id="keyboard-title">⌨️ Clavier</h3>
+        <div class="existing-wrapper">
+          <div class="already-signaled-title">Dégâts déjà signalés</div>
+          <ul id="list-keyboard" class="existing-damage-list"></ul>
+        </div>
+        <button class="damage-action" data-sec="keyboard" data-new>+ Signaler un dégât</button>
+      </article>
 
-  <div id="section-other"  class="section section-wide hidden">
-    <h3>🛠️ Autres</h3>
-    <div class="already-signaled-title">Dégâts déjà signalés :</div>
-  <ul id="list-other" class="existing-damage-list"></ul>
-    <button data-sec="other" data-nothing>Rien à signaler et terminer la vérification ✔︎</button>
-    <button data-sec="other" data-new>Signaler un nouveau dégât</button>
-    <button data-back>⏪︎ Précédent</button>
-  </div>
+      <article class="damage-card" aria-labelledby="mouse-title">
+        <h3 id="mouse-title">🐭 Souris / Trackpad</h3>
+        <div class="existing-wrapper">
+          <div class="already-signaled-title">Dégâts déjà signalés</div>
+          <ul id="list-mouse" class="existing-damage-list"></ul>
+        </div>
+        <button class="damage-action" data-sec="mouse" data-new>+ Signaler un dégât</button>
+      </article>
+
+      <article class="damage-card" aria-labelledby="screen-title">
+        <h3 id="screen-title">🖥️ Écran</h3>
+        <div class="existing-wrapper">
+          <div class="already-signaled-title">Dégâts déjà signalés</div>
+          <ul id="list-screen" class="existing-damage-list"></ul>
+        </div>
+        <button class="damage-action" data-sec="screen" data-new>+ Signaler un dégât</button>
+      </article>
+
+      <article class="damage-card headphone-card" aria-labelledby="headphones-title">
+        <h3 id="headphones-title">🎧 Écouteurs</h3>
+        <div id="headphones-existing" class="existing-wrapper">
+          <div class="already-signaled-title">Dégâts déjà signalés</div>
+          <ul id="list-headphones" class="existing-damage-list"></ul>
+        </div>
+
+        <label class="headphone-use-label">Écouteurs utilisés&nbsp;?</label>
+        <div class="radio-group">
+          <label><input type="radio" name="headphoneUse" value="oui" /> Oui</label>
+          <label><input type="radio" name="headphoneUse" value="non" /> Non</label>
+        </div>
+
+        <div id="headphone-details" class="hidden">
+          <label for="headphoneNumber">Numéro de la paire</label>
+          <div class="headphone-actions">
+            <select id="headphoneNumber"></select>
+            <button id="newHeadphoneDamage">+ Signaler un dégât</button>
+            <button id="noHeadphoneDamage">Aucun dégât ✔︎</button>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <button id="damageContinue">Continuer vers les règles →</button>
+  </section>
 
   <div id="section-rules" class="section section-wide hidden">
-    <h3>📜 Règles pour l’utilisation des ordinateurs</h3>
+    <h3>📜 Règles</h3>
     <ul>
       <li>👤 Chaque élève utilise <strong>uniquement son poste</strong>. Interdit de toucher à l’ordinateur, au clavier ou à la souris d’un autre élève.</li>
       <li>💻 Les portables s’utilisent <strong>à plat sur une table</strong>, jamais sur les genoux, et doivent être <strong>fermés</strong> quand on les déplace.</li>
-      <li>🖥️ Les écrans fixes ne doivent pas être déplacés ou tournés.</li>
       <li>🚫🥤 <strong>Pas de nourriture ni de boissons</strong> dans la salle d’informatique.</li>
-      <li>⚙️ Aucun <strong>téléchargement</strong> ni <strong>installation</strong> de logiciel n’est autorisé.</li>
-      <li>🌐 Internet doit être utilisé <strong>de manière appropriée</strong> pour un usage scolaire.</li>
-      <li>📚 De manière générale, il n’est pas permis de faire autre chose que ce qui a été demandé par l’enseignant.</li>
     </ul>
     <label>
       <input type="checkbox" id="rulesAgree" /> ✅ J’accepte ces règles et comprends que je m’expose à des sanctions si j’y contreviens.
     </label>
     <button id="rulesFinish" class="hidden">Terminer ✔︎</button>
-    <button data-back>⏪︎ Précédent</button>
+    <button data-back>← Revoir les dégâts</button>
   </div>
 
 </main>

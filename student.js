@@ -135,7 +135,7 @@ async function startSession(){
       startedAt: serverTimestamp(),
       lastSeen: serverTimestamp(),
       status: "in_progress",
-      step: "welcome",
+      step: "damage",
       items: [],
       hasRealDamage: false
     });
@@ -180,13 +180,20 @@ if (!pcSnap.exists()) {
 const data = (await getDoc(pcRef)).data();
 const headphoneExistingWrapper = document.getElementById("headphones-existing");
 const headphoneDamageList = document.getElementById("list-headphones");
-if (headphoneExistingWrapper) headphoneExistingWrapper.classList.add("hidden");
 
 const headphoneInitial = Array.isArray(data.headphones) ? data.headphones : [];
-["keyboard","mouse","screen","other"].forEach(sec=>{
+["keyboard","mouse","screen"].forEach(sec=>{
   const ul = document.getElementById(`list-${sec}`);
-  if (!ul || !data[sec]) return;
-  data[sec].forEach(d => {
+  if (!ul) return;
+  const existingDamages = Array.isArray(data[sec]) ? data[sec] : [];
+  if (existingDamages.length === 0) {
+    const li = document.createElement("li");
+    li.className = "existing-empty";
+    li.textContent = "Aucun dégât signalé.";
+    ul.appendChild(li);
+    return;
+  }
+  existingDamages.forEach(d => {
     const li = document.createElement("li");
     const wrapper = document.createElement("span");
     const bullet = document.createElement("span");
@@ -245,14 +252,18 @@ function renderHeadphoneDamageList(numero){
   if (!headphoneDamageList || !headphoneExistingWrapper) return;
   headphoneDamageList.innerHTML = "";
   const num = numero.trim();
+  headphoneExistingWrapper.classList.remove("hidden");
   if (!num) {
-    headphoneExistingWrapper.classList.add("hidden");
+    const li = document.createElement("li");
+    li.className = "existing-empty";
+    li.textContent = "Choisis un numéro pour voir les dégâts signalés.";
+    headphoneDamageList.appendChild(li);
     return;
   }
-  headphoneExistingWrapper.classList.remove("hidden");
   const inner = headphoneDamageMap.get(num);
   if (!inner || inner.size === 0) {
     const li = document.createElement("li");
+    li.className = "existing-empty";
     li.textContent = "Aucun dégât signalé pour cette paire.";
     headphoneDamageList.appendChild(li);
     return;
@@ -273,6 +284,7 @@ function renderHeadphoneDamageList(numero){
 }
 
 await loadHeadphoneDamages();
+renderHeadphoneDamageList("");
 
 /* ------ Gestion des boutons ------ */
 let pendingReports = [];   // on stocke avant d'envoyer tout d'un coup
@@ -300,13 +312,8 @@ function syncSessionItems(){
   /* ------ Navigation de section ------ */
 
   const sections = [
-    document.getElementById('section-welcome'),
-    document.getElementById('section-keyboard'),
-    document.getElementById('section-mouse'),
-    document.getElementById('section-screen'),
-    document.getElementById('section-headphones'),
-    document.getElementById('section-other'),
-    document.getElementById('section-rules')       // nouvelle étape
+    document.getElementById('section-damage'),
+    document.getElementById('section-rules')
   ];
 
   const pendingPanel = document.createElement("div");
@@ -426,7 +433,7 @@ function syncSessionItems(){
   }
 
   function attachPendingPanel(section){
-    if (!section || section.id === "section-welcome") return;
+    if (!section) return;
     section.appendChild(pendingPanel);
   }
 
@@ -457,24 +464,20 @@ function syncSessionItems(){
   const headphoneDetails = document.getElementById("headphone-details");
   const headphoneNumber = document.getElementById("headphoneNumber");
   const newHeadphoneDamage = document.getElementById("newHeadphoneDamage");
-  const btnNoHeadphone = document.getElementById("btnNoHeadphone");
   const noHeadphoneDamage = document.getElementById("noHeadphoneDamage");
 
-  if (headphoneRadios && headphoneDetails && btnNoHeadphone) {
+  if (headphoneDetails) {
     headphoneRadios.forEach(radio => {
       radio.onchange = () => {
         if (radio.value === "oui" && radio.checked) {
           headphoneDetails.classList.remove("hidden");
-          btnNoHeadphone.classList.add("hidden");
           renderHeadphoneDamageList(headphoneNumber.value.trim());
         } else if (radio.value === "non" && radio.checked) {
           headphoneDetails.classList.add("hidden");
-          btnNoHeadphone.classList.remove("hidden");
           renderHeadphoneDamageList("");
         }
       };
     });
-    btnNoHeadphone.onclick = nextSection;
   }
 
   if (headphoneNumber) {
@@ -492,6 +495,10 @@ function syncSessionItems(){
       }
       headphoneNumber.addEventListener("change", () => {
         renderHeadphoneDamageList(headphoneNumber.value.trim());
+        if (noHeadphoneDamage) {
+          noHeadphoneDamage.disabled = false;
+          noHeadphoneDamage.textContent = "Aucun dégât ✔︎";
+        }
       });
     } else {
       headphoneNumber.addEventListener("input", () => {
@@ -511,14 +518,16 @@ function syncSessionItems(){
     noHeadphoneDamage.onclick = () => {
       const num = headphoneNumber.value.trim();
       if (!num) { alert("Merci d’indiquer le numéro des écouteurs."); return; }
-      // On enregistre la simple utilisation sans dégât
+      pendingReports = pendingReports.filter(item => !(
+        item.section === "headphones"
+        && item.desc && typeof item.desc === "object"
+        && String(item.desc.numero ?? "").trim() === num
+      ));
       pendingReports.push({ section:"headphones", desc:{ numero:num, description:"aucun dégât" }});
       syncSessionItems();
       renderPendingLists();
-      // On passe à la section suivante SANS toucher à computers/headphones
-      if (headphoneNumber.tagName === "SELECT") headphoneNumber.value = "";
-      renderHeadphoneDamageList("");
-      nextSection();
+      noHeadphoneDamage.disabled = true;
+      noHeadphoneDamage.textContent = "Noté ✓";
     };
   }
 
@@ -597,13 +606,6 @@ function syncSessionItems(){
     }
     attachPendingPanel(sections[i]);
     renderPendingLists();
-    if (sections[i].id === "section-headphones") {
-      headphoneRadios.forEach(r => r.checked = false);
-      headphoneDetails.classList.add("hidden");
-      headphoneNumber.value = "";
-      if (btnNoHeadphone) btnNoHeadphone.classList.add("hidden");
-      if (noHeadphoneDamage) noHeadphoneDamage.classList.remove("hidden");
-    }
     if (sections[i].id === "section-rules" && rulesAgree && rulesFinish){
       rulesAgree.checked = false;
       rulesFinish.classList.add("hidden");
@@ -611,28 +613,23 @@ function syncSessionItems(){
   }
   show(current);
 
-  const welcomeBtn = document.getElementById("welcomeStart");
-  if (welcomeBtn) {
-    welcomeBtn.onclick = () => {
-      current = 1;
-      show(current);
-    };
+  const damageContinue = document.getElementById("damageContinue");
+  if (damageContinue) {
+    damageContinue.onclick = nextSection;
   }
 
   document.body.addEventListener("click", e=>{
+    const button = e.target.closest("button");
+    if (!button) return;
     /* avancer / reculer entre sections */
-    if (e.target.dataset.back !== undefined){
+    if (button.dataset.back !== undefined){
       previousSection();
       return;
     }
-    const sec = e.target.dataset.sec;
+    const sec = button.dataset.sec;
     if (!sec) return;
 
-    if ("nothing" in e.target.dataset){
-        nextSection();
-    }
-
-    if ("new" in e.target.dataset){
+    if ("new" in button.dataset){
         openModal(sec);
     }
   });
@@ -661,7 +658,17 @@ function syncSessionItems(){
           if (isEdit) {
             pendingReports[editIndex] = { section: sec, desc: hpObj };
           } else {
+            pendingReports = pendingReports.filter(item => !(
+              item.section === "headphones"
+              && isNoHeadphoneDamage(item.desc)
+              && item.desc && typeof item.desc === "object"
+              && String(item.desc.numero ?? "").trim() === num
+            ));
             pendingReports.push({ section: sec, desc: hpObj });
+          }
+          if (noHeadphoneDamage) {
+            noHeadphoneDamage.disabled = false;
+            noHeadphoneDamage.textContent = "Aucun dégât ✔︎";
           }
         } else if (isEdit) {
           pendingReports[editIndex].desc = txt;
@@ -671,7 +678,6 @@ function syncSessionItems(){
         syncSessionItems();
         renderPendingLists();
         closeModal();
-        if (!isEdit) nextSection();
     };
     cancelBtn.onclick = closeModal;
   }
@@ -693,7 +699,7 @@ function syncSessionItems(){
   }
 
   function buildComputerUpdates(items){
-    const allowed = new Set(["keyboard","mouse","screen","headphones","other"]);
+    const allowed = new Set(["keyboard","mouse","screen","headphones"]);
     const updates = {};
     const seen = new Set();
     (Array.isArray(items) ? items : []).forEach(item => {
@@ -778,7 +784,7 @@ function syncSessionItems(){
   }
 
   function label(sec){
-    return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",headphones:"Écouteurs",other:"Autres"}[sec];
+    return {keyboard:"Clavier",mouse:"Souris",screen:"Écran",headphones:"Écouteurs"}[sec];
   }
 
   updateProgressBar();
