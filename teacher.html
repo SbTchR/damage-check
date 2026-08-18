@@ -2,621 +2,379 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Tableau de bord dégâts</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Suivi du matériel</title>
 <style>
 :root {
-  --blue-700: #0f4fff;
-  --blue-500: #3299ff;
-  --purple-100: #f5f2ff;
-  --purple-50: #faf7ff;
-  --grey-900: #1b2430;
-  --grey-600: #4f5d72;
-  --grey-200: #dbe4f3;
-  --card: rgba(255,255,255,0.92);
-  --shadow-lg: 0 24px 42px rgba(33, 72, 136, 0.18);
-  --shadow-sm: 0 14px 26px rgba(33, 72, 136, 0.12);
-  --radius-lg: 26px;
-  --radius-md: 18px;
-  --radius-sm: 12px;
+  --navy-950: #0b1733;
+  --navy-800: #192946;
+  --slate-600: #5c6b82;
+  --slate-500: #718096;
+  --slate-300: #cdd6e3;
+  --slate-200: #e3e9f1;
+  --slate-100: #f2f5f9;
+  --slate-50: #f8fafc;
+  --blue-700: #174ecb;
+  --blue-600: #1f5fe0;
+  --blue-100: #eaf1ff;
+  --red-700: #b42332;
+  --red-100: #fff0f1;
+  --amber-700: #a84d08;
+  --amber-100: #fff5e8;
+  --green-700: #087a51;
+  --green-100: #eaf8f2;
+  --surface: #ffffff;
+  --page: #f7f9fc;
+  --shadow-sm: 0 4px 16px rgba(11, 23, 51, 0.06);
+  --radius-lg: 14px;
+  --radius-md: 11px;
+  --radius-sm: 8px;
   color-scheme: light;
 }
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 16px; }
 body {
   margin: 0;
+  min-width: 320px;
   min-height: 100vh;
-  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-  background: radial-gradient(circle at 0% -10%, #e8f1ff 0%, #eef5ff 35%, #ffffff 68%);
-  color: var(--grey-900);
-  display: flex;
-  justify-content: center;
-  padding: clamp(2.2rem, 4vw, 3.4rem) clamp(1.4rem, 3vw, 2.4rem) clamp(3rem, 5vw, 4rem);
+  background: var(--page);
+  color: var(--navy-950);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.94rem;
+  line-height: 1.45;
 }
-.app-shell {
-  width: min(1200px, 100%);
-  display: flex;
-  flex-direction: column;
-  gap: clamp(1.6rem, 3vw, 2.2rem);
+button, input, select { font: inherit; }
+button, select, input[type="checkbox"] { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 3px solid rgba(31, 95, 224, 0.25);
+  outline-offset: 2px;
 }
+.hidden, [hidden] { display: none !important; }
+.app-shell { min-height: 100vh; }
 .page-header {
-  background: var(--card);
-  border-radius: var(--radius-lg);
-  padding: clamp(1.8rem, 3vw, 2.4rem);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(14px);
-  display: grid;
-  gap: 0.8rem;
-}
-.page-title {
   display: flex;
-  align-items: center;
-  gap: 0.9rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem max(1.25rem, calc((100vw - 1480px) / 2));
+  background: var(--surface);
+  border-bottom: 1px solid var(--slate-200);
 }
-.page-title span {
-  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
-}
-.page-title h1 {
-  font-size: clamp(1.9rem, 2.8vw, 2.4rem);
-  margin: 0;
-  color: var(--blue-700);
-}
-.page-subtitle {
-  margin: 0;
-  color: var(--grey-600);
-  font-size: clamp(1.1rem, 1.4vw, 1.25rem);
-}
-.tab-bar {
-  display: flex;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-}
-.tab-btn {
-  flex: 1 1 220px;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 0.95rem 1.3rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  background: rgba(15, 79, 255, 0.1);
-  color: var(--blue-700);
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-.tab-btn:hover,
-.tab-btn:focus-visible {
-  transform: translateY(-2px);
-  background: rgba(15, 79, 255, 0.18);
-  box-shadow: 0 14px 24px rgba(33, 72, 136, 0.16);
-}
-.tab-btn.active {
-  background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
-  color: #fff;
-  box-shadow: 0 16px 28px rgba(33, 72, 136, 0.22);
-}
-.tab-panel {
-  display: none;
-  background: var(--card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: clamp(1.8rem, 3vw, 2.4rem);
-  backdrop-filter: blur(14px);
-}
-.tab-panel.active {
-  display: block;
-}
-.panel-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-  margin-bottom: 1.3rem;
-}
-.panel-header h2 {
-  margin: 0;
-  color: var(--blue-700);
-}
-.panel-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 1.4rem;
-  align-items: center;
-}
-.select-label {
-  font-weight: 600;
-  display: grid;
-  gap: 0.35rem;
-  color: var(--grey-900);
-}
-.select-label select {
-  min-width: 160px;
-  padding: 0.55rem 0.8rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--grey-200);
-  font-size: 1.05rem;
-}
-.checkbox-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 1.02rem;
-  color: var(--grey-600);
-}
-.checkbox-inline input[type="checkbox"] {
-  inline-size: 1.2em;
-  block-size: 1.2em;
-  accent-color: var(--blue-700);
-}
-.table-wrapper {
-  width: 100%;
+.page-title h1 { margin: 0; font-size: clamp(1.65rem, 3vw, 2.1rem); line-height: 1.12; letter-spacing: -0.035em; }
+.page-subtitle { margin: 0.35rem 0 0; color: var(--slate-600); font-size: 0.95rem; }
+.tab-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   overflow-x: auto;
-  border-radius: var(--radius-md);
-  box-shadow: inset 0 0 0 1px rgba(15, 79, 255, 0.08);
-  background: var(--purple-50);
-  position: relative;
+  background: rgba(255,255,255,0.96);
+  border-bottom: 1px solid var(--slate-200);
+  backdrop-filter: blur(12px);
+  scrollbar-width: none;
 }
-.damage-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 1.05rem;
-  color: var(--grey-900);
-}
-.damage-table thead {
-  background: rgba(15, 79, 255, 0.08);
-}
-.damage-table th,
-.damage-table td {
-  padding: 0.95rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid rgba(27, 36, 68, 0.1);
-}
-.damage-table tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.65);
-}
-.damage-table tbody tr.section-row td {
-  background: rgba(15, 79, 255, 0.12);
-  font-weight: 700;
-  color: var(--blue-700);
-  text-transform: uppercase;
-}
-.tag-status {
+.tab-wrap::-webkit-scrollbar { display: none; }
+.tab-bar { display: flex; gap: 0; width: min(1480px, 100%); min-width: max-content; margin: 0 auto; padding: 0 1.25rem; }
+.tab-btn {
   display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-weight: 600;
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-}
-.tag-status.danger {
-  background: rgba(255, 77, 109, 0.14);
-  color: #c62839;
-}
-.tag-status.success {
-  background: rgba(41, 204, 131, 0.18);
-  color: #0b7a4f;
-}
-.tag-status.neutral {
-  background: rgba(33, 33, 33, 0.08);
-  color: var(--grey-900);
-}
-.action-group {
-  display: flex;
-  gap: 0.4rem;
-}
-.action-group button {
-  font-size: 0.95rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: 999px;
-  border: none;
-  cursor: pointer;
-  background: rgba(15, 79, 255, 0.12);
-  color: var(--blue-700);
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-.action-group button:hover,
-.action-group button:focus-visible {
-  background: rgba(15, 79, 255, 0.22);
-  transform: translateY(-1px);
-}
-.action-group button[data-action="delete"] {
-  background: rgba(255, 77, 109, 0.14);
-  color: #c62839;
-}
-.action-group button[data-action="delete"]:hover,
-.action-group button[data-action="delete"]:focus-visible {
-  background: rgba(255, 77, 109, 0.22);
-}
-.action-group button[data-action="not-important"] {
-  background: rgba(33, 161, 255, 0.18);
-  color: var(--blue-700);
-}
-.action-group button[data-action="not-important"]:hover,
-.action-group button[data-action="not-important"]:focus-visible {
-  background: rgba(33, 161, 255, 0.26);
-}
-.empty-state {
-  padding: 1.6rem;
-  text-align: center;
-  color: var(--grey-600);
-  font-size: 1.05rem;
-}
-.hidden {
-  display: none !important;
-}
-.global-summary {
-  display: grid;
-  gap: 0.3rem;
-  margin-bottom: 1.6rem;
-}
-.global-summary h2 {
-  margin: 0;
-  color: var(--blue-700);
-}
-.global-summary p {
-  margin: 0;
-  color: var(--grey-600);
-}
-.global-grid {
-  display: grid;
-  gap: 1.4rem;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-.session-grid {
-  display: grid;
-  gap: 1.4rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-}
-.session-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.6rem;
-}
-.session-item {
-  background: rgba(15, 79, 255, 0.06);
-  border-radius: var(--radius-sm);
-  padding: 0.55rem 0.7rem;
-}
-.session-item[open] {
-  background: rgba(15, 79, 255, 0.12);
-}
-.session-summary {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.6rem;
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--blue-700);
-}
-.session-summary span:last-child {
-  color: var(--grey-600);
-  font-weight: 500;
-}
-.session-item-body {
-  display: grid;
-  gap: 0.6rem;
-  margin-top: 0.6rem;
-}
-.session-meta {
-  display: grid;
-  gap: 0.35rem;
-  font-size: 0.98rem;
-  color: var(--grey-600);
-}
-.session-meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-.session-meta-label {
-  font-weight: 600;
-}
-.session-meta-value {
-  color: var(--grey-900);
-  font-weight: 600;
-}
-.session-detail {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.45rem;
-}
-.session-detail li {
-  background: rgba(15, 79, 255, 0.08);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 0.7rem;
-  font-size: 1.02rem;
-  line-height: 1.35;
-}
-.session-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-.session-actions button {
-  border: none;
-  border-radius: 999px;
-  padding: 0.45rem 0.9rem;
-  font-size: 0.98rem;
-  font-weight: 600;
-  background: rgba(255, 77, 109, 0.2);
-  color: #a32031;
-  cursor: pointer;
-}
-.session-actions button:hover,
-.session-actions button:focus-visible {
-  background: rgba(255, 77, 109, 0.3);
-}
-.pc-card {
-  position: relative;
-  background: var(--card);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 1.4rem 1.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: stretch;
-}
-.pc-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid rgba(15, 79, 255, 0.16);
-  pointer-events: none;
-}
-.pc-card header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.6rem;
-}
-.pc-card header h3 {
-  margin: 0;
-  font-size: 1.4rem;
-  color: var(--blue-700);
-}
-.pc-card header span {
-  font-size: 0.95rem;
-  color: var(--grey-600);
-}
-.issue-sections {
-  display: grid;
-  gap: 0.6rem;
-  flex: 1 1 auto;
-}
-.section-card {
-  background: rgba(15, 79, 255, 0.08);
-  border-radius: var(--radius-sm);
-  padding: 0.7rem 0.85rem;
-  display: grid;
-  gap: 0.35rem;
-  align-content: start;
-}
-.section-card header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.6rem;
-  font-weight: 600;
-  color: var(--blue-700);
-}
-.section-card header span:last-child {
-  font-size: 0.88rem;
-  color: var(--grey-600);
-}
-.issue-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.3rem;
-}
-.issue-item {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  column-gap: 0.45rem;
-  align-items: center;
-  font-size: 1.04rem;
-}
-.issue-item span {
-  line-height: 1.32;
-}
-
-.damage-table tbody tr.needs-attention td,
-.issue-item.needs-attention span {
-  color: #c62828;
-  font-weight: 600;
-}
-.damage-table tbody tr.not-important td,
-.issue-item.not-important span {
-  color: var(--grey-900);
-  font-weight: 500;
-}
-
-.headphone-grid {
-  display: grid;
-  gap: 1.4rem;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-.headphone-card {
-  background: var(--card);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 1.3rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-.headphone-card header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.6rem;
-}
-.headphone-card header h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: var(--blue-700);
-}
-.headphone-card header span {
-  font-size: 0.92rem;
-  color: var(--grey-600);
-}
-.headphone-card .issue-sections {
-  gap: 0.5rem;
-}
-.headphone-card .section-card {
-  background: rgba(33, 161, 255, 0.12);
-}
-.issue-actions {
-  display: inline-flex;
-  gap: 0.2rem;
-}
-.issue-actions button {
-  border: none;
-  border-radius: 999px;
-  min-width: 1rem;
-  height: 1.4rem;
-  padding: 0.9rem 0.5rem;
-  font-size: 1.05rem;
-  display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(15, 79, 255, 0.18);
-  color: var(--blue-700);
-  cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  gap: 0.55rem;
+  min-height: 4.1rem;
+  padding: 0 1.45rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--navy-800);
+  font-size: 0.94rem;
+  font-weight: 650;
+  white-space: nowrap;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
 }
-.issue-actions button:hover,
-.issue-actions button:focus-visible {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
+.tab-btn:hover { background: var(--slate-50); color: var(--blue-700); }
+.tab-btn.active { color: var(--blue-600); border-bottom-color: var(--blue-600); }
+.tab-btn svg { width: 1.2rem; height: 1.2rem; }
+.main-content { width: min(1480px, 100%); margin: 0 auto; padding: clamp(1.2rem, 2.4vw, 2rem) 1.25rem 3rem; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: panel-in 180ms ease-out; }
+@keyframes panel-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.view-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
+.view-heading h2 { margin: 0; font-size: clamp(1.45rem, 2.4vw, 1.9rem); line-height: 1.15; letter-spacing: -0.025em; }
+.view-heading p { margin: 0.35rem 0 0; color: var(--slate-600); }
+.result-total { color: var(--slate-600); white-space: nowrap; }
+.result-total strong { color: var(--navy-950); font-size: 1.35rem; }
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
 }
-.issue-actions button[data-action="delete"] {
-  background: rgba(255, 77, 109, 0.24);
-  color: #a32031;
+.metric { display: flex; align-items: center; gap: 0.85rem; min-height: 5.75rem; padding: 1rem 1.2rem; border-right: 1px solid var(--slate-200); }
+.metric:last-child { border-right: 0; }
+.metric-icon { display: grid; flex: 0 0 auto; width: 2.7rem; height: 2.7rem; place-items: center; border-radius: 50%; color: var(--blue-700); background: var(--blue-100); }
+.metric-icon svg { width: 1.35rem; height: 1.35rem; }
+.metric.danger .metric-icon { color: var(--red-700); background: var(--red-100); }
+.metric.warning .metric-icon { color: var(--amber-700); background: var(--amber-100); }
+.metric.success .metric-icon { color: var(--green-700); background: var(--green-100); }
+.metric strong { display: block; font-size: 1.45rem; line-height: 1; }
+.metric span:last-child { display: block; margin-top: 0.3rem; color: var(--slate-600); font-size: 0.87rem; }
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
-.issue-actions button[data-action="delete"]:hover,
-.issue-actions button[data-action="delete"]:focus-visible {
-  filter: brightness(1.08);
-}
-.card-empty {
+.field { display: grid; gap: 0.35rem; min-width: 150px; color: var(--navy-800); font-size: 0.82rem; font-weight: 650; }
+.field.grow { flex: 1 1 260px; }
+.field input[type="search"], .field input[type="date"], .field select, .control-select {
+  width: 100%;
+  min-height: 2.8rem;
   margin: 0;
-  color: var(--grey-600);
-  font-size: 0.98rem;
+  padding: 0.62rem 0.75rem;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--navy-950);
+  font-size: 0.9rem;
 }
-.headphones-filter {
-  gap: 0.6rem;
+.field input::placeholder { color: var(--slate-500); }
+.check-control { display: inline-flex; align-items: center; gap: 0.55rem; min-height: 2.8rem; padding: 0.25rem 0.2rem; color: var(--navy-800); font-size: 0.88rem; font-weight: 600; }
+.check-control input, .row-check { width: 1.12rem; height: 1.12rem; margin: 0; accent-color: var(--blue-600); }
+.segmented { display: inline-grid; grid-template-columns: 1fr 1fr; align-self: flex-end; min-height: 2.8rem; overflow: hidden; border: 1px solid var(--slate-300); border-radius: var(--radius-sm); background: var(--slate-50); }
+.segmented label { position: relative; display: flex; align-items: center; justify-content: center; min-width: 130px; padding: 0.55rem 0.85rem; color: var(--navy-800); font-size: 0.88rem; font-weight: 650; cursor: pointer; }
+.segmented input { position: absolute; opacity: 0; pointer-events: none; }
+.segmented label:has(input:checked) { background: var(--blue-600); color: white; }
+.toolbar-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0 0.75rem; color: var(--slate-600); font-size: 0.88rem; }
+.toolbar-footer strong { color: var(--navy-950); }
+.mobile-filter-toggle.btn { display: none; width: 100%; margin-bottom: 0.75rem; justify-content: space-between; }
+.mobile-filter-toggle .filter-state { color: var(--slate-600); font-size: 0.78rem; font-weight: 600; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.55rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--navy-800);
+  font-size: 0.86rem;
+  font-weight: 650;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
-@media (max-width: 720px) {
-  .tab-btn {
-    flex: 1 1 100%;
-  }
-  .table-wrapper {
-    box-shadow: none;
-    background: transparent;
-  }
-  .damage-table th,
-  .damage-table td {
-    padding: 0.8rem 0.75rem;
-  }
-  .app-shell {
-    gap: 1.3rem;
-  }
+.btn:hover { border-color: var(--blue-600); background: var(--blue-100); color: var(--blue-700); }
+.btn.primary { border-color: var(--blue-600); color: var(--blue-700); }
+.btn.danger { border-color: #f1b7bd; color: var(--red-700); }
+.btn.danger:hover { border-color: var(--red-700); background: var(--red-100); }
+.btn:disabled { cursor: not-allowed; opacity: 0.48; }
+.btn svg { width: 1rem; height: 1rem; }
+.damage-groups { display: grid; gap: 0.75rem; }
+.damage-group { overflow: clip; border: 1px solid var(--slate-200); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.damage-group > summary { display: flex; align-items: center; gap: 0.75rem; min-height: 3.8rem; padding: 0.8rem 1rem; list-style: none; cursor: pointer; }
+.damage-group > summary::-webkit-details-marker { display: none; }
+.damage-group > summary::before { content: ""; width: 0.55rem; height: 0.55rem; border-right: 2px solid var(--navy-800); border-bottom: 2px solid var(--navy-800); transform: rotate(-45deg); transition: transform 150ms ease; }
+.damage-group[open] > summary::before { transform: rotate(45deg) translate(-2px, -2px); }
+.group-icon { display: grid; width: 2.15rem; height: 2.15rem; place-items: center; border-radius: 50%; background: var(--blue-100); color: var(--blue-700); }
+.group-icon svg { width: 1.15rem; height: 1.15rem; }
+.group-title { font-size: 1.05rem; font-weight: 750; }
+.group-count { padding: 0.18rem 0.48rem; border-radius: 6px; background: var(--slate-100); color: var(--slate-600); font-size: 0.78rem; font-weight: 650; }
+.group-meta { margin-left: auto; color: var(--slate-600); font-size: 0.82rem; text-align: right; }
+.damage-row { display: grid; grid-template-columns: minmax(105px, 0.7fr) minmax(220px, 2fr) minmax(180px, 1.2fr) minmax(110px, 0.7fr) auto; align-items: center; gap: 0.75rem; min-height: 3.7rem; padding: 0.7rem 1rem 0.7rem 3.9rem; border-top: 1px solid var(--slate-200); }
+.damage-component { display: flex; align-items: center; gap: 0.5rem; font-weight: 650; }
+.damage-component svg { width: 1.05rem; height: 1.05rem; color: var(--slate-600); }
+.damage-description { min-width: 0; overflow-wrap: anywhere; }
+.damage-meta { color: var(--slate-600); font-size: 0.82rem; }
+.damage-actions { display: flex; justify-content: flex-end; gap: 0.4rem; }
+.damage-row.group-empty { display: block; padding-block: 1rem; color: var(--slate-600); }
+.status { display: inline-flex; width: fit-content; align-items: center; padding: 0.28rem 0.52rem; border: 1px solid transparent; border-radius: 7px; font-size: 0.79rem; font-weight: 700; white-space: nowrap; }
+.status.danger { border-color: #f2b9bf; background: var(--red-100); color: var(--red-700); }
+.status.neutral, .status.success { border-color: #b9dfcf; background: var(--green-100); color: var(--green-700); }
+.empty-state { padding: 2.5rem 1rem; border: 1px dashed var(--slate-300); border-radius: var(--radius-lg); background: var(--surface); color: var(--slate-600); text-align: center; }
+.table-shell { overflow: auto; border: 1px solid var(--slate-200); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.data-table { width: 100%; min-width: 1040px; border-collapse: collapse; }
+.data-table th, .data-table td { padding: 0.75rem 0.85rem; border-bottom: 1px solid var(--slate-200); text-align: left; vertical-align: middle; }
+.data-table th { background: var(--slate-50); color: var(--navy-800); font-size: 0.78rem; font-weight: 750; }
+.data-table tr:last-child td { border-bottom: 0; }
+.data-table tbody tr:not(.section-row):hover { background: #fbfdff; }
+.data-table .section-row td { padding: 0.52rem 0.85rem; background: var(--blue-100); color: var(--blue-700); font-size: 0.78rem; font-weight: 750; letter-spacing: 0.025em; }
+.data-table .action-group { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.data-table .action-group .btn { min-height: 2.25rem; padding: 0.42rem 0.62rem; }
+.data-table .needs-attention .description-cell { color: var(--red-700); font-weight: 650; }
+.data-table .not-important .description-cell { color: var(--slate-600); }
+.session-selection { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 0.8rem; margin: 0 0 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid var(--slate-200); border-radius: var(--radius-md); background: var(--surface); }
+.selection-count { color: var(--slate-600); text-align: center; }
+.session-table { min-width: 960px; }
+.session-table .check-cell { width: 48px; text-align: center; }
+.session-table .actions-cell { width: 245px; }
+.session-table .action-group { flex-wrap: nowrap; }
+.session-table .details-row td { padding: 0; background: var(--slate-50); }
+.session-details-panel { display: grid; grid-template-columns: minmax(230px, 0.8fr) minmax(300px, 1.4fr); gap: 1.5rem; padding: 1rem 1.2rem 1.2rem 4rem; border-left: 3px solid var(--blue-600); }
+.session-details-panel h4 { margin: 0 0 0.65rem; font-size: 0.88rem; }
+.session-meta { display: grid; grid-template-columns: max-content 1fr; gap: 0.28rem 0.8rem; margin: 0; font-size: 0.82rem; }
+.session-meta dt { color: var(--slate-600); }
+.session-meta dd { margin: 0; font-weight: 600; }
+.session-detail-list { display: grid; gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
+.session-detail-list li { padding: 0.5rem 0.65rem; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.83rem; }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem; border-top: 1px solid var(--slate-200); }
+.pagination-buttons { display: flex; gap: 0.3rem; }
+.page-btn { min-width: 2.25rem; padding-inline: 0.55rem; }
+.page-btn.active { border-color: var(--blue-600); background: var(--blue-600); color: white; }
+.headphone-list { display: grid; gap: 0.75rem; }
+.headphone-card { overflow: hidden; border: 1px solid var(--slate-200); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.headphone-card > header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.85rem 1rem; }
+.headphone-card h3 { margin: 0; font-size: 1rem; }
+.headphone-card .issue-list { margin: 0; padding: 0; list-style: none; }
+.headphone-card .issue-item { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-top: 1px solid var(--slate-200); }
+.headphone-card .issue-item > span { min-width: 0; overflow-wrap: anywhere; }
+.issue-actions { display: flex; gap: 0.35rem; }
+.toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 50; max-width: min(420px, calc(100vw - 2rem)); padding: 0.8rem 1rem; border-radius: var(--radius-md); background: var(--navy-950); color: white; box-shadow: 0 14px 40px rgba(11,23,51,0.25); }
+@media (max-width: 980px) {
+  .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metric:nth-child(2) { border-right: 0; }
+  .metric:nth-child(-n+2) { border-bottom: 1px solid var(--slate-200); }
+  .damage-row { grid-template-columns: minmax(100px, 0.7fr) minmax(200px, 1.5fr) minmax(140px, 1fr); padding-left: 1rem; }
+  .damage-row .status { grid-column: 1; }
+  .damage-actions { grid-column: 2 / -1; justify-content: flex-start; }
+  .session-selection { grid-template-columns: 1fr 1fr; }
+  .selection-count { text-align: left; }
 }
+@media (max-width: 680px) {
+  body { font-size: 0.92rem; }
+  .page-header { align-items: center; padding: 1rem; }
+  .page-subtitle { font-size: 0.82rem; }
+  .tab-bar { padding: 0 0.4rem; }
+  .tab-btn { min-height: 3.6rem; padding: 0 0.85rem; }
+  .tab-btn svg { display: none; }
+  .main-content { padding: 1.1rem 0.85rem 2.5rem; }
+  .view-heading { align-items: flex-start; }
+  .result-total { font-size: 0.78rem; }
+  .result-total strong { font-size: 1.05rem; }
+  .metrics-grid { display: flex; overflow-x: auto; border-radius: var(--radius-md); scrollbar-width: none; }
+  .metrics-grid::-webkit-scrollbar { display: none; }
+  .metric { min-width: 160px; min-height: 4.5rem; padding: 0.75rem; border-right: 1px solid var(--slate-200) !important; border-bottom: 0 !important; }
+  .metric-icon { width: 2.25rem; height: 2.25rem; }
+  .metric strong { font-size: 1.15rem; }
+  .toolbar { display: grid; grid-template-columns: 1fr; padding: 0.8rem; }
+  .mobile-filter-toggle.btn { display: flex; }
+  .toolbar.mobile-collapsed { display: none; }
+  .field, .field.grow { min-width: 0; width: 100%; }
+  .segmented { width: 100%; }
+  .segmented label { min-width: 0; }
+  .check-control { min-height: 2.25rem; }
+  .toolbar-footer { align-items: flex-start; }
+  .damage-group > summary { padding: 0.75rem; }
+  .group-meta { display: none; }
+  .damage-row { display: grid; grid-template-columns: 1fr auto; gap: 0.35rem 0.7rem; padding: 0.85rem; }
+  .damage-component { grid-column: 1; color: var(--slate-600); font-size: 0.8rem; }
+  .damage-description { grid-column: 1 / -1; font-size: 0.98rem; font-weight: 650; }
+  .damage-meta { grid-column: 1; }
+  .damage-row .status { grid-column: 2; grid-row: 1; }
+  .damage-actions { grid-column: 1 / -1; margin-top: 0.4rem; }
+  .damage-actions .btn { flex: 1 1 auto; }
+  .session-selection { grid-template-columns: 1fr; }
+  .session-selection .btn { width: 100%; }
+  .session-details-panel { grid-template-columns: 1fr; padding: 0.9rem; }
+  .pagination { align-items: stretch; flex-direction: column; }
+  .pagination-buttons { justify-content: space-between; }
+  .pagination-buttons .page-btn:not(.active):not([data-page-action]) { display: none; }
+  .headphone-card .issue-item { grid-template-columns: 1fr; }
+  .issue-actions .btn { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
 <div class="app-shell">
-  <header class="page-header">
-    <div class="page-title">
-      <span>🛠️</span>
-      <h1>Tableau de bord des dégâts</h1>
-    </div>
-    <p class="page-subtitle">Suivi rapide des signalements envoyés par les élèves</p>
-  </header>
-
-  <nav class="tab-bar">
-    <button id="tabPc" class="tab-btn active" data-target="dash">Vue par ordinateur</button>
-    <button id="tabGlobal" class="tab-btn" data-target="globalView">Vue d'ensemble</button>
-    <button id="tabHeadphones" class="tab-btn" data-target="headphoneView">Écouteurs</button>
-    <button id="tabSessions" class="tab-btn" data-target="sessionView">Sessions non validées</button>
-  </nav>
-
-  <section id="dash" class="tab-panel active">
-    <div class="panel-header">
-      <div class="panel-controls">
-        <label class="select-label">Ordinateur
-          <select id="pcSelect"></select>
-        </label>
-        <label class="checkbox-inline">
-          <input type="checkbox" id="onlyDamages" />
-          <span>Masquer les entrées « rien »</span>
-        </label>
-        <label class="checkbox-inline">
-          <input type="checkbox" id="onlyUnres" />
-          <span>Afficher uniquement les dégâts non réglés</span>
-        </label>
-        <label class="select-label">Écouteur
-          <select id="pcHeadphoneSelect">
-            <option value="">— Aucun —</option>
-          </select>
-        </label>
+  <header class="page-header"><div class="page-title"><h1>Suivi du matériel</h1><p class="page-subtitle">Dégâts et signalements des ordinateurs de l’école</p></div></header>
+  <div class="tab-wrap">
+    <nav class="tab-bar" aria-label="Vues du tableau de bord">
+      <button type="button" id="tabPc" class="tab-btn active" data-target="dash" aria-selected="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Par ordinateur</button>
+      <button type="button" id="tabGlobal" class="tab-btn" data-target="globalView" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Vue d’ensemble</button>
+      <button type="button" id="tabHeadphones" class="tab-btn" data-target="headphoneView" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h3v6H5a1 1 0 0 1-1-1v-5ZM20 14h-3v6h2a1 1 0 0 0 1-1v-5Z"/></svg>Écouteurs</button>
+      <button type="button" id="tabSessions" class="tab-btn" data-target="sessionView" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Sessions non validées</button>
+    </nav>
+  </div>
+  <main class="main-content">
+    <section id="dash" class="tab-panel active" aria-labelledby="pcHeading">
+      <div class="view-heading"><div><h2 id="pcHeading">Détails par ordinateur</h2><p>Historique et état actuel d’un poste ou d’un écouteur.</p></div><span id="pcResultCount" class="result-total" aria-live="polite"></span></div>
+      <div class="toolbar">
+        <label class="field">Ordinateur<select id="pcSelect"></select></label>
+        <label class="field">Écouteur<select id="pcHeadphoneSelect"><option value="">— Aucun —</option></select></label>
+        <label class="field grow">Rechercher<input type="search" id="pcDamageSearch" placeholder="Description, élève…" autocomplete="off" /></label>
+        <label class="field">Trier<select id="pcSort"><option value="component">Par composant</option><option value="newest">Plus récents d’abord</option><option value="oldest">Plus anciens d’abord</option></select></label>
+        <label class="check-control"><input type="checkbox" id="onlyDamages" /> Masquer les entrées « rien »</label>
+        <label class="check-control"><input type="checkbox" id="onlyUnres" /> Dégâts non réglés uniquement</label>
       </div>
-    </div>
-    <div class="table-wrapper">
-      <table class="damage-table">
-        <thead>
-          <tr>
-            <th>Composant</th>
-            <th>Description</th>
-            <th>Signalé le</th>
-            <th>Élève</th>
-            <th>Statut</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-      <div class="empty-state hidden" id="pcEmpty">Aucun signalement pour ce poste.</div>
-    </div>
-  </section>
-
-  <section id="globalView" class="tab-panel">
-    <div class="global-summary">
-      <h2>Vue d'ensemble</h2>
-      <p>Chaque carte liste les dégâts non résolus et l'élève qui a fait le dernier signalement.</p>
-    </div>
-    <div id="globalGrid" class="global-grid"></div>
-    <div class="empty-state hidden" id="globalEmpty">Aucun dégât en attente sur l'ensemble des ordinateurs.</div>
-  </section>
-
-  <section id="headphoneView" class="tab-panel">
-    <div class="panel-header">
-      <h2>Signalements écouteurs</h2>
-      <div class="panel-controls headphones-filter">
-        <label class="select-label">Numéro d'écouteur
-          <select id="headphoneSelect"></select>
-        </label>
+      <div class="table-shell">
+        <table class="data-table" aria-label="Signalements de l’ordinateur sélectionné"><thead><tr><th>Composant</th><th>Description</th><th>Signalé le</th><th>Élève</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tbody"></tbody></table>
+        <div class="empty-state hidden" id="pcEmpty">Aucun signalement pour ce poste.</div>
       </div>
-    </div>
-    <div class="headphone-grid" id="headphoneGrid"></div>
-    <div class="empty-state hidden" id="headphoneEmpty">Aucun signalement d'écouteurs pour le moment.</div>
-  </section>
-
-  <section id="sessionView" class="tab-panel">
-    <div class="global-summary">
-      <h2>Sessions non validées</h2>
-      <p>Affiche les formulaires sans validation. Clique sur une session pour voir le détail.</p>
-    </div>
-    <div id="sessionGrid" class="session-grid"></div>
-    <div class="empty-state hidden" id="sessionEmpty">Aucune session non validée.</div>
-  </section>
+    </section>
+    <section id="globalView" class="tab-panel" aria-labelledby="globalHeading">
+      <div class="metrics-grid" aria-label="Résumé des dégâts">
+        <article class="metric danger"><span class="metric-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4M12 17h.01"/></svg></span><div><strong id="metricAll">—</strong><span>dégâts en cours</span></div></article>
+        <article class="metric warning"><span class="metric-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><strong id="metricImportant">—</strong><span>à traiter</span></div></article>
+        <article class="metric"><span class="metric-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><div><strong id="metricComputers">—</strong><span>ordinateurs concernés</span></div></article>
+        <article class="metric success"><span class="metric-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 4 4L19 6"/></svg></span><div><strong id="metricNotImportant">—</strong><span>pas importants</span></div></article>
+      </div>
+      <div class="view-heading"><div><h2 id="globalHeading">Vue d’ensemble</h2><p>Regroupez les dégâts par ordinateur ou par date selon votre façon de travailler.</p></div></div>
+      <button type="button" class="btn mobile-filter-toggle" id="globalMobileFilters" aria-expanded="false"><span>Filtres</span><span class="filter-state" id="globalMobileFilterState">Ordinateurs sans dégât masqués</span></button>
+      <div class="toolbar" id="globalToolbar">
+        <label class="field grow">Rechercher<input type="search" id="globalSearch" placeholder="Un ordinateur, un dégât ou un élève" autocomplete="off" /></label>
+        <fieldset class="segmented" aria-label="Regrouper les dégâts"><label><input type="radio" name="globalGroup" value="computer" checked />Par ordinateur</label><label><input type="radio" name="globalGroup" value="date" />Par date</label></fieldset>
+        <label class="check-control"><input type="checkbox" id="globalHideNotImportant" /> Masquer les dégâts pas importants</label>
+        <label class="check-control"><input type="checkbox" id="globalHideEmpty" /> Masquer les ordinateurs sans dégât</label>
+        <label class="field">Ordre<select id="globalSort"><option value="newest">Plus récents d’abord</option><option value="oldest">Plus anciens d’abord</option></select></label>
+      </div>
+      <div class="toolbar-footer"><strong id="globalResultCount" aria-live="polite"></strong><span id="globalFilterSummary"></span></div>
+      <div id="globalGrid" class="damage-groups"></div>
+      <div class="empty-state hidden" id="globalEmpty">Aucun dégât ne correspond aux filtres.</div>
+    </section>
+    <section id="headphoneView" class="tab-panel" aria-labelledby="headphoneHeading">
+      <div class="view-heading"><div><h2 id="headphoneHeading">Signalements écouteurs</h2><p>Retrouvez un écouteur, puis traitez ses dégâts en cours.</p></div><span id="headphoneResultCount" class="result-total" aria-live="polite"></span></div>
+      <div class="toolbar">
+        <label class="field">Numéro d’écouteur<select id="headphoneSelect"></select></label>
+        <label class="field grow">Rechercher<input type="search" id="headphoneSearch" placeholder="Description ou ordinateur" autocomplete="off" /></label>
+        <label class="check-control"><input type="checkbox" id="headphoneHideNotImportant" /> Masquer les dégâts pas importants</label>
+      </div>
+      <div class="headphone-list" id="headphoneGrid"></div>
+      <div class="empty-state hidden" id="headphoneEmpty">Aucun signalement d’écouteurs ne correspond aux filtres.</div>
+    </section>
+    <section id="sessionView" class="tab-panel" aria-labelledby="sessionHeading">
+      <div class="view-heading"><div><h2 id="sessionHeading">Sessions non validées</h2><p>Formulaires sans validation depuis plus de 15 min.</p></div><span class="result-total"><strong id="sessionResultCount">—</strong> sessions</span></div>
+      <div class="toolbar" id="sessionFilters">
+        <label class="field">Du<input type="date" id="sessionDateFrom" /></label>
+        <label class="field">Au<input type="date" id="sessionDateTo" /></label>
+        <label class="field">Ordinateur<select id="sessionPcFilter"><option value="">Tous les ordinateurs</option></select></label>
+        <label class="field grow">Élève<input type="search" id="sessionUserSearch" placeholder="Rechercher un élève" autocomplete="off" /></label>
+        <label class="check-control"><input type="checkbox" id="sessionHasDamage" /> Avec dégâts uniquement</label>
+        <label class="field">Ordre<select id="sessionSort"><option value="newest">Plus récentes d’abord</option><option value="oldest">Plus anciennes d’abord</option><option value="computer">Par ordinateur</option></select></label>
+        <button type="button" class="btn" id="sessionReset">Réinitialiser</button>
+      </div>
+      <div class="session-selection">
+        <label class="check-control"><input type="checkbox" id="sessionSelectPage" /> Sélectionner la page</label>
+        <button type="button" class="btn primary" id="sessionSelectFiltered">Sélectionner les résultats filtrés</button>
+        <span class="selection-count" id="sessionSelectionCount" aria-live="polite">0 sélectionnée</span>
+        <button type="button" class="btn danger" id="sessionDeleteSelected" disabled>Supprimer la sélection</button>
+      </div>
+      <div class="table-shell">
+        <table class="data-table session-table" aria-label="Sessions non validées"><thead><tr><th class="check-cell"><span class="hidden">Sélection</span></th><th>Ordinateur</th><th>Date</th><th>Élève</th><th>Dernière étape</th><th>Dégâts</th><th class="actions-cell">Actions</th></tr></thead><tbody id="sessionTableBody"></tbody></table>
+        <div class="empty-state hidden" id="sessionEmpty">Aucune session non validée ne correspond aux filtres.</div>
+        <div class="pagination" id="sessionPagination"></div>
+      </div>
+    </section>
+  </main>
 </div>
-
-<script type="module" src="teacher.js"></script>
+<div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="teacher.js?v=20260818.5"></script>
 </body>
 </html>
