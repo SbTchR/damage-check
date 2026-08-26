@@ -212,6 +212,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .data-table .action-group .btn { min-height: 2.25rem; padding: 0.42rem 0.62rem; }
 .data-table .needs-attention .description-cell { color: var(--red-700); font-weight: 650; }
 .data-table .not-important .description-cell { color: var(--slate-600); }
+.data-table .unvalidated-session { background: #fffdf8; }
+.data-table .unvalidated-session .description-cell { color: var(--amber-700); font-weight: 650; }
+.data-table .history-placeholder { color: var(--slate-500); font-size: 0.8rem; }
 .session-selection { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 0.8rem; margin: 0 0 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid var(--slate-200); border-radius: var(--radius-md); background: var(--surface); }
 .selection-count { color: var(--slate-600); text-align: center; }
 .session-table { min-width: 960px; }
@@ -367,7 +370,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
         <label class="check-control"><input type="checkbox" id="onlyUnres" /> Dégâts non réglés uniquement</label>
       </div>
       <div class="table-shell">
-        <table class="data-table" aria-label="Signalements de l’ordinateur sélectionné"><thead><tr><th>Composant</th><th>Description</th><th>Signalé le</th><th>Élève</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tbody"></tbody></table>
+        <table class="data-table" aria-label="Historique de l’ordinateur sélectionné"><thead><tr><th>Type</th><th>Description</th><th>Date et heure</th><th>Élève</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tbody"></tbody></table>
         <div class="empty-state hidden" id="pcEmpty">Aucun signalement pour ce poste.</div>
       </div>
     </section>
@@ -442,6 +445,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
   </main>
 </div>
 <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
-<script type="module" src="teacher.js?v=20260818.9"></script>
+<script type="module" src="teacher.js?v=20260826.1"></script>
 </body>
 </html>

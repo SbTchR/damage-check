@@ -681,11 +681,37 @@ function buildPcRows() {
     if (!needle || searchable.includes(needle)) rows.push(row);
   });
 
+  if (!onlyUnresToggleEl?.checked) {
+    eligibleSessions()
+      .filter(session => String(session.pcId || "") === String(currentPC || ""))
+      .forEach(session => {
+        const lastStep = labelStep(session.step);
+        const row = {
+          rowType: "session",
+          section: "session",
+          componentText: "Formulaire",
+          groupText: "Formulaires non validés",
+          descText: `Formulaire non validé · Dernière étape : ${lastStep}`,
+          whenTs: sessionStartMs(session),
+          user: String(session.user || "").trim() || "Élève inconnu",
+          isUnres: false,
+          isNotImportant: false
+        };
+        const searchable = normalizeText(`${row.componentText} ${row.descText} ${row.user} ${formatDateTime(row.whenTs)}`);
+        if (!needle || searchable.includes(needle)) rows.push(row);
+      });
+  }
+
   const sortMode = pcSort?.value || "component";
   rows.sort((a, b) => {
     if (sortMode === "newest") return b.whenTs - a.whenTs;
     if (sortMode === "oldest") return (a.whenTs || Number.MAX_SAFE_INTEGER) - (b.whenTs || Number.MAX_SAFE_INTEGER);
-    const sectionDiff = SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section);
+    const sectionRank = section => {
+      if (section === "session") return 0;
+      const index = SECTION_ORDER.indexOf(section);
+      return index >= 0 ? index + 1 : SECTION_ORDER.length + 1;
+    };
+    const sectionDiff = sectionRank(a.section) - sectionRank(b.section);
     return sectionDiff || (b.whenTs - a.whenTs);
   });
   return rows;
@@ -696,14 +722,19 @@ async function drawTable() {
   if (currentHeadphoneDetail) { await drawHeadphoneDetail(currentHeadphoneDetail); return; }
   tbody.replaceChildren();
   pcEmpty?.classList.add("hidden");
-  if (!pcReportsLoaded || !pcUnresolvedLoaded) {
+  if (!pcReportsLoaded || !pcUnresolvedLoaded || !sessionDataLoaded) {
     if (pcResultCount) pcResultCount.textContent = "Chargement…";
-    if (pcEmpty) pcEmpty.textContent = "Chargement des signalements…";
+    if (pcEmpty) pcEmpty.textContent = "Chargement de l’historique…";
     pcEmpty?.classList.remove("hidden");
     return;
   }
   const rows = buildPcRows();
-  if (pcResultCount) pcResultCount.textContent = formatCount(rows.length, "résultat");
+  const abandonedCount = rows.filter(row => row.rowType === "session").length;
+  if (pcResultCount) {
+    pcResultCount.textContent = abandonedCount
+      ? `${formatCount(rows.length, "entrée")} · ${formatCount(abandonedCount, "formulaire non validé", "formulaires non validés")}`
+      : formatCount(rows.length, "résultat");
+  }
 
   let currentSection = null;
   rows.forEach(row => {
@@ -713,13 +744,13 @@ async function drawTable() {
       heading.className = "section-row";
       const cell = document.createElement("td");
       cell.colSpan = 6;
-      cell.textContent = label(row.section);
+      cell.textContent = row.groupText || label(row.section);
       heading.appendChild(cell);
       tbody.appendChild(heading);
     }
     const tr = document.createElement("tr");
-    tr.className = row.isNotImportant ? "not-important" : (row.isUnres ? "needs-attention" : "");
-    [label(row.section), row.descText, row.whenTs ? formatDateTime(row.whenTs) : "—", row.user || "—"].forEach((text, index) => {
+    tr.className = row.rowType === "session" ? "unvalidated-session" : (row.isNotImportant ? "not-important" : (row.isUnres ? "needs-attention" : ""));
+    [row.componentText || label(row.section), row.descText, row.whenTs ? formatDateTime(row.whenTs) : "—", row.user || "—"].forEach((text, index) => {
       const td = document.createElement("td");
       td.textContent = text;
       if (index === 1) td.className = "description-cell";
@@ -727,12 +758,17 @@ async function drawTable() {
     });
     const statusCell = document.createElement("td");
     const status = document.createElement("span");
-    status.className = `status ${row.isUnres ? (row.isNotImportant ? "neutral" : "danger") : "success"}`;
-    status.textContent = row.isUnres ? (row.isNotImportant ? "Pas important" : "À traiter") : "Réglé";
+    status.className = `status ${row.rowType === "session" ? "warning" : (row.isUnres ? (row.isNotImportant ? "neutral" : "danger") : "success")}`;
+    status.textContent = row.rowType === "session" ? "Non validé" : (row.isUnres ? (row.isNotImportant ? "Pas important" : "À traiter") : "Réglé");
     statusCell.appendChild(status);
     tr.appendChild(statusCell);
     const actionCell = document.createElement("td");
-    actionCell.appendChild(createDamageActions(row, currentPC, row.isUnres));
+    if (row.rowType === "session") {
+      actionCell.className = "history-placeholder";
+      actionCell.textContent = "Historique";
+    } else {
+      actionCell.appendChild(createDamageActions(row, currentPC, row.isUnres));
+    }
     tr.appendChild(actionCell);
     tbody.appendChild(tr);
   });
@@ -1217,8 +1253,15 @@ function subscribeSessions() {
     Array.from(expandedSessionIds).forEach(id => { if (!available.has(id)) expandedSessionIds.delete(id); });
     populateSessionPcFilter();
     renderSessions();
+    if (currentPC) drawTable();
     if (followupView?.classList.contains("active")) renderFollowups();
-  }, error => console.warn("subscribeSessions", error));
+  }, error => {
+    console.warn("subscribeSessions", error);
+    sessionDataLoaded = true;
+    sessionCache = [];
+    renderSessions();
+    if (currentPC) drawTable();
+  });
 }
 
 function sessionFiltersChanged() {
